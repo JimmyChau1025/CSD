@@ -7,16 +7,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>小紫的雙階戰略溫習系統：蘋果樹與知識泡泡</title>
 
-<!-- 在這裡加入以下三行代碼 -->
-    <!-- 給標準 Android/華為瀏覽器使用的圖示 -->
-    <link rel="icon" type="image/png" sizes="512x512" href="image_9.png">
-    <!-- 給 iOS (iPad) 裝置使用的圖示 -->
-    <link rel="apple-touch-icon" href="image_9.png">
-    <!-- 給 PWA (安裝應用程式) 使用的設定清單 -->
-    <link rel="manifest" href='data:application/manifest+json,{"name":"小紫溫習系統","short_name":"CSD","display":"standalone","start_url":"./index.html","background_color":"#ffffff","theme_color":"#7B1FA2","icons":[{"src":"icon.png","sizes":"512x512","type":"image/png"}]}'>
-
-    <!-- 原本的 <style> 樣式開始 -->
-
 <style>
   :root {
     --primary: #6a1b9a;
@@ -1011,10 +1001,34 @@
   }
 </style>
 
-<!-- 專屬高清 App 圖示 (同時支援 Android Chrome、華為瀏覽器及 iPad) -->
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><rect width='120' height='120' rx='28' fill='%236a1b9a'/><circle cx='60' cy='60' r='48' fill='%23ab47bc'/><text x='60' y='82' font-size='68' text-anchor='middle'>🍎</text></svg>">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><rect width='120' height='120' rx='28' fill='%236a1b9a'/><circle cx='60' cy='60' r='48' fill='%23ab47bc'/><text x='60' y='82' font-size='68' text-anchor='middle'>🍎</text></svg>">
-<link rel="manifest" href='data:application/manifest+json,{"name":"小紫的雙階戰略溫習系統","short_name":"小紫溫習","display":"standalone","orientation":"landscape","background_color":"#a1c4fd","theme_color":"#6a1b9a","icons":[{"src":"data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 120 120%27><rect width=%27120%27 height=%27120%27 rx=%2728%27 fill=%27%236a1b9a%27/><text x=%2760%27 y=%2782%27 font-size=%2768%27 text-anchor=%27middle%27>🍎</text></svg>","sizes":"512x512","type":"image/svg+xml"}]}'>
+<!-- 專屬 App 圖示設定 (統一指向 icon.png) -->
+<link rel="icon" type="image/png" sizes="512x512" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" id="pwa-manifest">
+
+<script>
+  // 自動抓取當前 GitHub Pages 的完整絕對網址，徹底解決 data: 路徑無效導致無法安裝的問題
+  (function() {
+    const baseUrl = window.location.href.split('#')[0].split('?')[0].replace(/\/index\.html$/, '').replace(/\/$/, '') + '/';
+    const iconUrl = baseUrl + 'icon.png';
+    const manifestObj = {
+      name: "小紫的雙階戰略溫習系統",
+      short_name: "CSD",
+      start_url: baseUrl + "index.html",
+      scope: baseUrl,
+      display: "standalone",
+      orientation: "landscape",
+      background_color: "#a1c4fd",
+      theme_color: "#6a1b9a",
+      icons: [
+        { src: iconUrl, sizes: "192x192", type: "image/png", purpose: "any maskable" },
+        { src: iconUrl, sizes: "512x512", type: "image/png", purpose: "any maskable" }
+      ]
+    };
+    const blob = new Blob([JSON.stringify(manifestObj)], { type: 'application/manifest+json' });
+    document.getElementById('pwa-manifest').setAttribute('href', URL.createObjectURL(blob));
+  })();
+</script>
 </head>
 <body class="theme-3">
 
