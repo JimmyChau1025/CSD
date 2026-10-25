@@ -1,0 +1,3449 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>小紫的雙階戰略溫習系統：蘋果樹與知識泡泡</title>
+<style>
+  :root {
+    --primary: #6a1b9a;
+    --accent: #ff6b9d;
+    --gold: #ffca28;
+    --green: #2e7d32;
+    --red: #d32f2f;
+  }
+  * {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    font-family: "PingFang HK", "Microsoft JhengHei", "Heiti TC", sans-serif;
+    color: #2c1a4d;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: background 0.6s ease;
+  }
+
+  /* 三大主題專屬底色 */
+  body.theme-1 {
+    background: linear-gradient(180deg, #ffecd2 0%, #fcb69f 45%, #ffdde1 85%, #f7bb97 100%);
+  }
+  body.theme-2 {
+    background: linear-gradient(180deg, #d4fc79 0%, #96e6a1 45%, #84fab0 85%, #8fd3f4 100%);
+  }
+  body.theme-3 {
+    background: linear-gradient(180deg, #a1c4fd 0%, #c2e9fb 45%, #e0c3fc 85%, #8ec5fc 100%);
+  }
+
+  /* 通用頂部狀態列 */
+  .top-hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 18px;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(8px);
+    border-bottom: 3px solid rgba(156, 39, 176, 0.2);
+    z-index: 50;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .hud-left, .hud-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .hud-pill {
+    background: #fff;
+    border: 2px solid #ce93d8;
+    border-radius: 24px;
+    padding: 6px 14px;
+    font-size: 16px;
+    font-weight: 900;
+    color: #4a148c;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .hud-pill.apple-target-pill {
+    background: linear-gradient(135deg, #ffebee, #ffcdd2);
+    border-color: #e53935;
+    color: #b71c1c;
+    font-size: 17px;
+  }
+  .hud-pill.score-pill {
+    background: linear-gradient(135deg, #fff8e1, #ffecb3);
+    border-color: #ffa000;
+    color: #e65100;
+    font-size: 18px;
+  }
+  .hud-pill.timer-pill {
+    background: linear-gradient(135deg, #e8eaf6, #c5cae9);
+    border-color: #3949ab;
+    color: #1a237e;
+  }
+  .btn-small {
+    background: #7e57c2;
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    padding: 8px 13px;
+    font-size: 14.5px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+    transition: transform 0.1s;
+  }
+  .btn-small:active { transform: scale(0.94); }
+  .btn-small.secondary { background: #5c6bc0; }
+  .btn-small.backup { background: #00897b; }
+  .btn-small.success { background: #2e7d32; }
+
+  /* 浮動加減分特效 */
+  .score-float {
+    position: fixed;
+    top: 62px;
+    right: 180px;
+    font-size: 24px;
+    font-weight: 900;
+    pointer-events: none;
+    z-index: 999;
+    animation: floatUpFade 1s ease-out forwards;
+  }
+  @keyframes floatUpFade {
+    0% { opacity: 1; transform: translateY(0) scale(0.9); }
+    50% { opacity: 1; transform: translateY(-18px) scale(1.1); }
+    100% { opacity: 0; transform: translateY(-36px) scale(1); }
+  }
+
+  /* 畫面容器切換 */
+  .screen {
+    flex: 1;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+  .screen.active { display: flex; }
+
+  /* ==================== 畫面 1：選單首頁 ==================== */
+  .menu-container {
+    max-width: 1040px;
+    width: 95%;
+    margin: auto;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(10px);
+    border: 4px solid rgba(156, 39, 176, 0.35);
+    border-radius: 32px;
+    padding: 22px 28px;
+    box-shadow: 0 18px 40px rgba(44, 26, 77, 0.18);
+    max-height: 86vh;
+    overflow-y: auto;
+  }
+  .menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .menu-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .xiaozi-mascot {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #f3e5f5, #ab47bc 65%, #6a1b9a);
+    border: 3px solid #fff;
+    box-shadow: 0 6px 14px rgba(106,27,154,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .xiaozi-mascot::before {
+    content: '👾';
+    font-size: 34px;
+  }
+  .step-title {
+    font-size: 19px;
+    font-weight: 900;
+    color: #4a148c;
+    margin: 14px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .theme-tabs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .theme-tab-card {
+    padding: 14px 18px;
+    border-radius: 20px;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+  }
+  .theme-tab-card.t1 {
+    background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+    border-color: #ffb74d;
+    color: #bf360c;
+  }
+  .theme-tab-card.t2 {
+    background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+    border-color: #81c784;
+    color: #1b5e20;
+  }
+  .theme-tab-card.t3 {
+    background: linear-gradient(135deg, #e3f2fd, #e1bee7);
+    border-color: #9575cd;
+    color: #311b92;
+  }
+  .theme-tab-card.selected {
+    transform: translateY(-3px) scale(1.01);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+    border-width: 3.5px;
+    border-color: #2c1a4d;
+  }
+  .theme-tab-title {
+    font-size: 18px;
+    font-weight: 900;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .theme-tab-sub {
+    font-size: 13.5px;
+    font-weight: 700;
+    opacity: 0.85;
+  }
+
+  .chapter-grid {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .chapter-card {
+    padding: 9px 18px;
+    border-radius: 16px;
+    border: 2.5px solid #b39ddb;
+    background: #ede7f6;
+    font-size: 16px;
+    font-weight: 900;
+    color: #4527a0;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .chapter-card.selected {
+    background: linear-gradient(135deg, #7e57c2, #5e35b1);
+    color: #fff;
+    border-color: #311b92;
+    box-shadow: 0 4px 10px rgba(94, 53, 177, 0.3);
+  }
+
+  .section-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+    gap: 14px;
+  }
+  @media (max-width: 680px) {
+    .section-grid { grid-template-columns: 1fr; }
+  }
+  .section-card {
+    background: #fff;
+    border: 3px solid #e1bee7;
+    border-radius: 22px;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  }
+  .section-card:hover, .section-card:active {
+    border-color: #8e24aa;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(142,36,170,0.16);
+  }
+  .section-info-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+  .section-badge {
+    display: inline-block;
+    background: #f3e5f5;
+    color: #6a1b9a;
+    font-weight: 900;
+    font-size: 14px;
+    padding: 3px 11px;
+    border-radius: 10px;
+    align-self: flex-start;
+  }
+  .section-name {
+    font-size: 17.5px;
+    font-weight: 900;
+    color: #2c1a4d;
+    line-height: 1.35;
+  }
+  .section-meta {
+    font-size: 13px;
+    color: #666;
+    font-weight: 700;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  /* 右側 7 個小燈泡專區 */
+  .section-bulbs-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 6px;
+    flex-shrink: 0;
+    background: #faf6fd;
+    border: 2px solid #ede7f6;
+    border-radius: 16px;
+    padding: 10px 12px;
+    min-width: 175px;
+    position: relative;
+  }
+  .bulbs-label {
+    font-size: 12px;
+    font-weight: 900;
+    color: #6a1b9a;
+  }
+  .bulbs-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+  .bulb-icon {
+    width: 21px;
+    height: 21px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    background: #e0e0e0;
+    border: 2px solid #bdbdbd;
+    color: #9e9e9e;
+    filter: grayscale(100%);
+    opacity: 0.45;
+    transition: all 0.3s ease;
+  }
+  .bulb-icon.lit {
+    background: radial-gradient(circle at 35% 35%, #fffde7, #ffd600 65%, #ffab00);
+    border-color: #ff8f00;
+    color: #fff;
+    filter: none;
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(255, 214, 0, 0.9), 0 0 18px rgba(255, 171, 0, 0.6);
+    transform: scale(1.08);
+  }
+
+  /* 集齊 7 個燈泡時的「完美」紅色印章 */
+  .perfect-red-stamp {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%) rotate(-14deg);
+    border: 4px double #d32f2f;
+    color: #d32f2f;
+    background: rgba(255, 235, 238, 0.92);
+    padding: 4px 12px;
+    border-radius: 10px;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    box-shadow: 0 4px 12px rgba(211, 47, 47, 0.35), inset 0 0 6px rgba(211, 47, 47, 0.25);
+    pointer-events: none;
+    z-index: 10;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.6);
+    animation: stampSlam 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .perfect-red-stamp::after {
+    content: '★ 7/7 零失誤 ★';
+    display: block;
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    text-align: center;
+    margin-top: -2px;
+    font-weight: 900;
+  }
+  @keyframes stampSlam {
+    0% { transform: translateY(-50%) rotate(-14deg) scale(2.2); opacity: 0; }
+    100% { transform: translateY(-50%) rotate(-14deg) scale(1); opacity: 1; }
+  }
+
+  .empty-theme-box {
+    background: rgba(255,255,255,0.85);
+    border: 3px dashed #b39ddb;
+    border-radius: 22px;
+    padding: 28px;
+    text-align: center;
+    color: #4a148c;
+  }
+
+  /* ==================== 過渡動畫畫面 ==================== */
+  .transition-overlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at center, #4a148c 0%, #1a0933 100%);
+    color: #fff;
+    z-index: 500;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 30px;
+  }
+  .transition-overlay.active {
+    display: flex;
+    animation: fadeInTrans 0.35s ease;
+  }
+  @keyframes fadeInTrans {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .trans-card {
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(12px);
+    border: 3px solid rgba(255, 255, 255, 0.35);
+    border-radius: 32px;
+    padding: 34px 44px;
+    max-width: 680px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+  }
+  .trans-stage-tag {
+    display: inline-block;
+    background: var(--gold);
+    color: #3e2723;
+    font-size: 18px;
+    font-weight: 900;
+    padding: 6px 20px;
+    border-radius: 24px;
+    margin-bottom: 14px;
+  }
+  .trans-title {
+    font-size: 32px;
+    font-weight: 900;
+    margin: 8px 0 16px;
+    color: #fff;
+  }
+  .trans-desc {
+    font-size: 18.5px;
+    line-height: 1.6;
+    color: #f3e5f5;
+    margin-bottom: 26px;
+  }
+  .btn-giant {
+    background: linear-gradient(135deg, #ffca28, #ff8f00);
+    color: #3e2723;
+    border: 3px solid #fff;
+    border-radius: 36px;
+    padding: 14px 38px;
+    font-size: 22px;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(255, 193, 7, 0.45);
+    transition: transform 0.15s;
+  }
+  .btn-giant:active { transform: scale(0.95); }
+
+  /* ==================== 第一階段：宏觀戰略蘋果樹 ==================== */
+  .tree-stage-layout {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    gap: 16px;
+    padding: 12px 20px 18px;
+    overflow: hidden;
+    align-items: stretch;
+  }
+  @media (max-width: 820px) {
+    .tree-stage-layout {
+      grid-template-columns: 1fr;
+      grid-template-rows: 1.1fr 1fr;
+    }
+  }
+  .tree-zone {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 50% 40%, rgba(255,255,255,0.7), rgba(200,230,201,0.45));
+    border-radius: 28px;
+    border: 3px solid rgba(255,255,255,0.85);
+    padding: 14px;
+    overflow: hidden;
+  }
+  .tree-canopy {
+    width: 96%;
+    flex: 1;
+    background: radial-gradient(circle at 35% 30%, #66bb6a, #2e7d32 72%, #1b5e20);
+    border-radius: 50% 50% 42% 42% / 55% 55% 45% 45%;
+    border: 5px solid #a5d6a7;
+    box-shadow: 0 14px 30px rgba(27, 94, 32, 0.35), inset 0 12px 28px rgba(255, 255, 255, 0.28);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    position: relative;
+    z-index: 5;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .tree-canopy.drag-hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 32px rgba(255, 235, 59, 0.9), inset 0 0 25px rgba(255, 255, 255, 0.5);
+    border-color: #fff59d;
+  }
+  .tree-core-banner {
+    background: linear-gradient(135deg, #fff8e1, #ffe082);
+    border: 3px solid #f57f17;
+    color: #4e2a04;
+    padding: 8px 20px;
+    border-radius: 22px;
+    font-size: 19px;
+    font-weight: 900;
+    text-align: center;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+  .tree-slots-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    max-height: 100%;
+    overflow-y: auto;
+  }
+  .tree-slot {
+    min-width: 145px;
+    max-width: 210px;
+    min-height: 52px;
+    padding: 8px 12px;
+    border-radius: 20px;
+    border: 2.5px dashed rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.18);
+    color: #e8f5e9;
+    font-size: 15px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: all 0.25s;
+  }
+  .tree-slot.staged {
+    background: radial-gradient(circle at 30% 30%, #ff8a80, #e53935 70%, #b71c1c);
+    border: 2.5px solid #fff;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 5px 12px rgba(0,0,0,0.28);
+  }
+  .tree-slot.staged.gold-staged {
+    background: radial-gradient(circle at 30% 25%, #fff9c4, #ffd54f 65%, #ff8f00);
+    border: 2.5px solid #fff;
+    color: #3e2723;
+  }
+  .tree-slot.locked-correct {
+    background: linear-gradient(135deg, #ffd54f, #ffb300);
+    border: 3px solid #fff;
+    color: #3e2723;
+    box-shadow: 0 0 18px rgba(255, 213, 79, 0.85);
+    animation: popCorrect 0.45s ease;
+  }
+  .tree-slot.rotten-wrong {
+    background: linear-gradient(135deg, #4a148c, #263238);
+    border: 3px solid #ff5252;
+    color: #ff8a80;
+    animation: rottenShakeOut 1.25s ease forwards;
+  }
+  @keyframes popCorrect {
+    0% { transform: scale(0.85); }
+    50% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+  }
+  @keyframes rottenShakeOut {
+    0% { transform: translateX(0) scale(1); opacity: 1; }
+    15% { transform: translateX(-10px) rotate(-6deg); }
+    30% { transform: translateX(10px) rotate(6deg); }
+    45% { transform: translateX(-8px) rotate(-4deg); }
+    65% { transform: scale(1.08); opacity: 0.9; }
+    100% { transform: scale(0.2) translateY(40px); opacity: 0; }
+  }
+  .tree-trunk {
+    width: 90px;
+    height: 44px;
+    background: linear-gradient(90deg, #5d4037, #8d6e63 50%, #4e342e);
+    border-radius: 0 0 16px 16px;
+    margin-top: -6px;
+    z-index: 2;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+  }
+  .orchard-zone {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(6px);
+    border-radius: 28px;
+    border: 3px solid #fff;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    position: relative;
+  }
+  .orchard-header {
+    font-size: 17px;
+    font-weight: 900;
+    color: #4a148c;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .apples-pool {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-content: flex-start;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 10px 6px 96px 6px;
+  }
+
+  /* 還原 old apple.jpg 的立體光澤與右上角綠葉造型 */
+  .apple-item {
+    min-width: 140px;
+    max-width: 215px;
+    padding: 10px 14px;
+    border-radius: 24px 24px 28px 28px;
+    background: radial-gradient(circle at 30% 25%, #ff8a80, #e53935 65%, #c62828);
+    color: #fff;
+    font-size: 15.5px;
+    font-weight: 800;
+    text-align: center;
+    cursor: grab;
+    position: relative;
+    border: 2.5px solid rgba(255,255,255,0.9);
+    box-shadow: 0 6px 14px rgba(198, 40, 40, 0.28), inset 0 2px 6px rgba(255,255,255,0.45);
+    touch-action: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.3;
+    transition: transform 0.15s;
+    will-change: transform;
+  }
+  .apple-item::before {
+    content: '🍃';
+    position: absolute;
+    top: -10px;
+    right: 12px;
+    font-size: 14px;
+    pointer-events: none;
+  }
+  /* 金蘋果（保持一模一樣的立體蘋果造型，改為黃金光澤） */
+  .apple-item.gold-apple {
+    background: radial-gradient(circle at 30% 25%, #fffde7, #ffd54f 60%, #ff8f00);
+    color: #3e2723;
+    border: 2.5px solid #fff;
+    box-shadow: 0 6px 18px rgba(255, 160, 0, 0.55), inset 0 2px 8px rgba(255,255,255,0.8);
+  }
+  .apple-item:active { transform: scale(0.95); }
+  .apple-item.dragging {
+    z-index: 999;
+    box-shadow: 0 16px 32px rgba(0,0,0,0.35);
+    transition: none !important;
+    animation: none !important;
+  }
+
+  /* 🗑️ 純圖像化大垃圾筒（無任何文字說明） */
+  .big-trash-can {
+    position: absolute;
+    bottom: 14px;
+    right: 16px;
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffffff, #eceff1 65%, #cfd8dc);
+    border: 4px solid #90a4ae;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.18), inset 0 2px 6px rgba(255,255,255,0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 46px;
+    cursor: pointer;
+    z-index: 30;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  }
+  .big-trash-can.drag-hover, .big-trash-can.active-mode {
+    transform: scale(1.16);
+    border-color: #e53935;
+    background: radial-gradient(circle at 35% 30%, #fff, #ffcdd2 70%, #ef9a9a);
+    box-shadow: 0 0 26px rgba(229, 57, 53, 0.75);
+  }
+
+  .stage-banner-msg {
+    background: rgba(255, 255, 255, 0.94);
+    border: 3px solid #ce93d8;
+    border-radius: 18px;
+    padding: 8px 18px;
+    margin: 8px 20px 0;
+    font-size: 17.5px;
+    font-weight: 900;
+    color: #4a148c;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+  }
+
+  /* ==================== 第二階段：細節知識泡泡防衛戰 ==================== */
+  .bubble-stage-layout {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 10px 24px 20px;
+    overflow: hidden;
+    position: relative;
+  }
+  .giant-bubble-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 28px;
+    position: relative;
+  }
+  .giant-bubble {
+    width: min(76vw, 720px);
+    min-height: 210px;
+    background: radial-gradient(circle at 25% 25%, rgba(255,255,255,0.95) 0%, rgba(235,248,255,0.88) 55%, rgba(230,210,255,0.92) 100%);
+    border: 4px solid #fff;
+    border-radius: 120px;
+    box-shadow: 0 14px 34px rgba(90, 120, 180, 0.22), inset 0 0 28px rgba(255, 255, 255, 0.95);
+    padding: 24px 38px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+  }
+  .subtopic-pill {
+    background: #e1bee7;
+    color: #4a148c;
+    font-weight: 900;
+    font-size: 15px;
+    padding: 4px 14px;
+    border-radius: 16px;
+    margin-bottom: 10px;
+  }
+  .bubble-q-text {
+    font-size: clamp(20px, 2.6vw, 27px);
+    font-weight: 900;
+    color: #1f162b;
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+  .bubble-drop-slot {
+    min-width: 240px;
+    min-height: 54px;
+    padding: 10px 24px;
+    border: 3px dashed #7e57c2;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.9);
+    color: #5e35b1;
+    font-size: 21px;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .bubble-drop-slot.drag-over {
+    transform: scale(1.06);
+    background: #fff9c4;
+    border-color: #ffa000;
+  }
+  .bubble-drop-slot.correct {
+    background: #c8e6c9;
+    border: 3px solid #2e7d32;
+    color: #1b5e20;
+  }
+  .bubble-drop-slot.wrong {
+    background: #ffcdd2;
+    border: 3px solid #c62828;
+    color: #b71c1c;
+  }
+
+  /* 🪡 純圖像化大針（無任何文字說明） */
+  .big-needle-pin {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #ffffff, #fce4ec 65%, #f8bbd0);
+    border: 4px solid #ec407a;
+    box-shadow: 0 10px 24px rgba(233, 30, 99, 0.25), inset 0 2px 8px rgba(255,255,255,0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 52px;
+    cursor: pointer;
+    flex-shrink: 0;
+    z-index: 30;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+  }
+  .big-needle-pin.drag-hover, .big-needle-pin.active-mode {
+    transform: scale(1.18) rotate(-12deg);
+    border-color: #d81b60;
+    background: radial-gradient(circle at 30% 30%, #fff, #f48fb1 70%, #ec407a);
+    box-shadow: 0 0 28px rgba(216, 27, 96, 0.8);
+  }
+
+  .bubble-options-row {
+    min-height: 220px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 22px;
+    padding: 10px;
+  }
+  .answer-bubble {
+    width: clamp(145px, 19vw, 185px);
+    height: clamp(145px, 19vw, 185px);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 16px;
+    font-size: clamp(17px, 2vw, 22px);
+    font-weight: 900;
+    color: #1f162b;
+    cursor: grab;
+    position: relative;
+    touch-action: none;
+    border: 3px solid rgba(255,255,255,0.95);
+    box-shadow: 0 10px 22px rgba(0,0,0,0.14), inset 0 0 18px rgba(255,255,255,0.85);
+    animation: floatAnsBubble 3s ease-in-out infinite;
+    will-change: transform;
+  }
+  .answer-bubble:nth-child(1) { background: radial-gradient(circle at 30% 30%, #e0f7fa, #80deea 65%, #4dd0e1); }
+  .answer-bubble:nth-child(2) { background: radial-gradient(circle at 30% 30%, #fce4ec, #f48fb1 65%, #f06292); animation-delay: 0.4s; }
+  .answer-bubble:nth-child(3) { background: radial-gradient(circle at 30% 30%, #fff9c4, #ffd54f 65%, #ffca28); animation-delay: 0.8s; }
+  .answer-bubble:nth-child(4) { background: radial-gradient(circle at 30% 30%, #e8f5e9, #a5d6a7 65%, #81c784); animation-delay: 1.2s; }
+  @keyframes floatAnsBubble {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-9px); }
+  }
+  /* 拖曳期間強制關閉所有動畫與過渡，確保平板 60fps 零延遲跟手 */
+  .answer-bubble.dragging {
+    animation: none !important;
+    transition: none !important;
+    z-index: 999;
+    box-shadow: 0 18px 36px rgba(0,0,0,0.28), inset 0 0 20px rgba(255,255,255,0.9);
+  }
+  .answer-bubble.burst-wrong {
+    animation: none !important;
+    background: radial-gradient(circle, #ff8a80, #d32f2f) !important;
+    color: #fff !important;
+    transform: scale(1.38);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.25s ease-out, opacity 0.25s ease-out;
+  }
+  .answer-bubble.revealed-correct {
+    animation: none !important;
+    background: radial-gradient(circle at 30% 30%, #fffde7, #ffd54f 65%, #ff8f00) !important;
+    border: 4px solid #2e7d32 !important;
+    color: #1b5e20 !important;
+    box-shadow: 0 0 26px rgba(255, 193, 7, 0.95);
+    transform: scale(1.08);
+  }
+  .answer-bubble.popped {
+    animation: none !important;
+    transform: scale(1.35);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.22s ease-out, opacity 0.22s ease-out;
+  }
+
+  /* ==================== 彈出面板 ==================== */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(25, 12, 45, 0.72);
+    backdrop-filter: blur(6px);
+    z-index: 800;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-backdrop.active { display: flex; }
+  .modal-box {
+    background: #fff;
+    width: min(94vw, 840px);
+    max-height: 88vh;
+    border-radius: 28px;
+    border: 4px solid #ce93d8;
+    padding: 24px 28px;
+    overflow-y: auto;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+  }
+  .modal-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .modal-top h2 { margin: 0; color: #4a148c; }
+  table.record-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 15px;
+  }
+  table.record-table th, table.record-table td {
+    border: 1px solid #e1bee7;
+    padding: 10px 12px;
+    text-align: center;
+  }
+  table.record-table th {
+    background: #f3e5f5;
+    color: #4a148c;
+    font-weight: 900;
+  }
+  textarea.excel-input {
+    width: 100%;
+    height: 115px;
+    border: 2px solid #b39ddb;
+    border-radius: 12px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 13.5px;
+    margin: 6px 0 12px;
+  }
+  .victory-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .victory-stat-box {
+    background: #f3e5f5;
+    border: 2px solid #ce93d8;
+    border-radius: 18px;
+    padding: 14px;
+    text-align: center;
+  }
+  .victory-stat-box .val {
+    font-size: 26px;
+    font-weight: 900;
+    color: #6a1b9a;
+  }
+  .perfect-alert-banner {
+    background: linear-gradient(135deg, #fff8e1, #ffecb3);
+    border: 3px solid #ffa000;
+    border-radius: 18px;
+    padding: 12px 18px;
+    font-size: 18px;
+    font-weight: 900;
+    color: #e65100;
+    margin: 12px 0;
+  }
+</style>
+
+<!-- 專屬高清 App 圖示 (同時支援 Android Chrome、華為瀏覽器及 iPad) -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><rect width='120' height='120' rx='28' fill='%236a1b9a'/><circle cx='60' cy='60' r='48' fill='%23ab47bc'/><text x='60' y='82' font-size='68' text-anchor='middle'>🍎</text></svg>">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><rect width='120' height='120' rx='28' fill='%236a1b9a'/><circle cx='60' cy='60' r='48' fill='%23ab47bc'/><text x='60' y='82' font-size='68' text-anchor='middle'>🍎</text></svg>">
+<link rel="manifest" href='data:application/manifest+json,{"name":"小紫的雙階戰略溫習系統","short_name":"小紫溫習","display":"standalone","orientation":"landscape","background_color":"#a1c4fd","theme_color":"#6a1b9a","icons":[{"src":"data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 120 120%27><rect width=%27120%27 height=%27120%27 rx=%2728%27 fill=%27%236a1b9a%27/><text x=%2760%27 y=%2782%27 font-size=%2768%27 text-anchor=%27middle%27>🍎</text></svg>","sizes":"512x512","type":"image/svg+xml"}]}'>
+</head>
+<body class="theme-3">
+
+<!-- 頂部狀態列 -->
+<div class="top-hud">
+  <div class="hud-left">
+    <button class="btn-small" onclick="returnToMenu()">🏠 選關首頁</button>
+    <div class="hud-pill" id="hud-stage-label">請選擇主題與課目</div>
+    <div class="hud-pill apple-target-pill" id="hud-apple-target" style="display:none;">
+      🍎 需放蘋果：<span id="apple-slot-progress">0 / 5</span>
+    </div>
+  </div>
+  <div class="hud-right">
+    <div class="hud-pill timer-pill">⏱️ 時間：<span id="hud-timer">00:00</span> <small>(-10分/秒)</small></div>
+    <div class="hud-pill score-pill">🏆 分數：<span id="hud-score">1000</span></div>
+    <button class="btn-small secondary" onclick="openRecordsModal()">📊 成績記錄</button>
+    <button class="btn-small backup" onclick="openBackupModal()">💾 備份/還原</button>
+    <button class="btn-small success" onclick="openExcelModal()">➕ 新增 EXCEL 題目</button>
+  </div>
+</div>
+
+<!-- ==================== 畫面 1：選關首頁 ==================== -->
+<div class="screen active" id="screen-menu">
+  <div class="menu-container">
+    <div class="menu-header">
+      <div class="menu-header-left">
+        <div class="xiaozi-mascot"></div>
+        <div>
+          <h1 style="margin:0; font-size:25px; color:#4a148c;">🌸 小紫的雙階戰略溫習系統</h1>
+          <p style="margin:4px 0 0; color:#555; font-weight:700; font-size:14.5px;">
+            第一階段：宏觀戰略蘋果樹 ➔ 第二階段：細節知識泡泡防衛戰（零失誤過關可點亮課目燈泡 💡，集齊 7 個獲「完美」印章！）
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-title">1️⃣ 第一步：請選擇「主題」與「章節」</div>
+    <div class="theme-tabs" id="theme-tabs"></div>
+    <div class="chapter-grid" id="chapter-list"></div>
+
+    <div class="step-title">2️⃣ 第二步：請選擇「課目編號」開始挑戰（零失誤通關點亮右方燈泡 💡）</div>
+    <div id="section-list-wrapper"></div>
+  </div>
+</div>
+
+<!-- ==================== 畫面 2：第一階段（宏觀戰略蘋果樹） ==================== -->
+<div class="screen" id="screen-tree">
+  <div class="stage-banner-msg">
+    <span id="tree-feedback-msg">👾 小紫提示：請把屬於這棵樹的蘋果拉入（或點擊放入）樹冠空格中！放滿所有空格後會自動檢驗！</span>
+    <span id="run-mistake-indicator" style="font-size:14px; background:#f3e5f5; padding:4px 12px; border-radius:12px;">💡 本局失誤：0 次</span>
+  </div>
+
+  <div class="tree-stage-layout">
+    <div class="tree-zone">
+      <div class="tree-canopy" id="tree-canopy">
+        <div class="tree-core-banner" id="tree-trunk-title">核心母主題</div>
+        <div class="tree-slots-grid" id="tree-slots-grid"></div>
+      </div>
+      <div class="tree-trunk"></div>
+    </div>
+
+    <div class="orchard-zone">
+      <div class="orchard-header">
+        <span>🍎 待選蘋果池（拖曳或點擊蘋果掛上樹）</span>
+        <span id="orchard-remaining-count">待選 15 個</span>
+      </div>
+      <div class="apples-pool" id="apples-pool"></div>
+
+      <!-- 🗑️ 純圖像大垃圾筒 -->
+      <div class="big-trash-can" id="trash-bin-bar" onclick="toggleTrashTapMode()">🗑️</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 畫面 3：第二階段（細節知識泡泡防衛戰） ==================== -->
+<div class="screen" id="screen-bubble">
+  <div class="stage-banner-msg">
+    <span id="bubble-feedback-msg">👾 小紫提示：將下方正確的生字泡泡拖曳（或點擊）到上方大泡泡空格內！答對 +100 分，答錯 -50 分！</span>
+    <span id="run-mistake-indicator-2" style="font-size:14px; background:#f3e5f5; padding:4px 12px; border-radius:12px;">💡 本局失誤：0 次</span>
+  </div>
+
+  <div class="bubble-stage-layout">
+    <div class="giant-bubble-wrap">
+      <div class="giant-bubble" id="giant-bubble-target">
+        <div class="subtopic-pill" id="bubble-subtopic">子分支</div>
+        <div class="bubble-q-text" id="bubble-q-text">題目載入中...</div>
+        <div class="bubble-drop-slot" id="bubble-drop-slot">✨ 拖曳或點擊下方泡泡到此 ✨</div>
+      </div>
+
+      <!-- 🪡 純圖像大針 -->
+      <div class="big-needle-pin" id="needle-tool-box" onclick="toggleNeedleTapMode()">🪡</div>
+    </div>
+
+    <div class="bubble-options-row" id="bubble-options-row"></div>
+  </div>
+</div>
+
+<!-- ==================== 過場畫面 ==================== -->
+<div class="transition-overlay" id="transition-overlay">
+  <div class="trans-card">
+    <div class="trans-stage-tag" id="trans-tag">STAGE 1</div>
+    <div class="trans-title" id="trans-title">第一階段：宏觀戰略蘋果樹</div>
+    <div class="trans-desc" id="trans-desc">說明文字</div>
+    <button class="btn-giant" id="trans-btn">🚀 立即開始！</button>
+  </div>
+</div>
+
+<!-- ==================== 過關成功畫面 ==================== -->
+<div class="modal-backdrop" id="victory-modal">
+  <div class="modal-box" style="text-align:center;">
+    <h1 style="color:#4a148c; font-size:30px; margin:0 0 6px;">🎉 恭喜 Carol 過關成功！</h1>
+    <p id="victory-subtitle" style="font-size:17px; color:#555; font-weight:800; margin:0;">已完成雙階段溫習挑戰</p>
+
+    <div class="perfect-alert-banner" id="victory-bulb-banner"></div>
+
+    <div class="victory-stat-grid">
+      <div class="victory-stat-box">
+        <div>🏆 最終總分</div>
+        <div class="val" id="vic-final-score">1500</div>
+      </div>
+      <div class="victory-stat-box">
+        <div>⏱️ 總用時間</div>
+        <div class="val" id="vic-total-time">01:20</div>
+      </div>
+      <div class="victory-stat-box">
+        <div>🌳 蘋果樹耗時</div>
+        <div class="val" id="vic-tree-stat" style="font-size:20px;">25秒</div>
+      </div>
+      <div class="victory-stat-box">
+        <div>🫧 泡泡戰耗時</div>
+        <div class="val" id="vic-bubble-stat" style="font-size:20px;">55秒</div>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:center; gap:14px; margin-top:18px; flex-wrap:wrap;">
+      <button class="btn-giant" style="font-size:18px; padding:12px 26px;" onclick="replayCurrentStage()">🔄 再玩一次本關</button>
+      <button class="btn-giant" style="font-size:18px; padding:12px 26px; background:linear-gradient(135deg,#ab47bc,#7b1fa2); color:#fff;" onclick="closeModals(); returnToMenu();">🏠 返回課目選單看燈泡</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 分數與時間記錄面板 ==================== -->
+<div class="modal-backdrop" id="records-modal">
+  <div class="modal-box">
+    <div class="modal-top">
+      <h2>📊 歷史分數與完成時間記錄面板</h2>
+      <div style="display:flex; gap:8px;">
+        <button class="btn-small" style="background:#c62828;" onclick="clearHistoryRecords()">🗑️ 清空記錄</button>
+        <button class="btn-small" onclick="closeModals()">✖ 關閉</button>
+      </div>
+    </div>
+    <div id="records-table-container"></div>
+  </div>
+</div>
+
+<!-- ==================== 備份與還原面板 ==================== -->
+<div class="modal-backdrop" id="backup-modal">
+  <div class="modal-box">
+    <div class="modal-top">
+      <h2>💾 備份與還原中心</h2>
+      <button class="btn-small" onclick="closeModals()">✖ 關閉</button>
+    </div>
+
+    <div style="background:#e0f2f1; border:2px solid #26a69a; border-radius:18px; padding:16px; margin-bottom:16px;">
+      <h3 style="margin:0 0 8px; color:#00695c;">方式一：檔案備份與還原</h3>
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <button class="btn-small backup" style="font-size:16px; padding:10px 20px;" onclick="downloadBackupFile()">📥 下載備份檔 (.json)</button>
+        <label class="btn-small secondary" style="font-size:16px; padding:10px 20px; display:inline-block; cursor:pointer;">
+          📤 選取備份檔還原 (.json)
+          <input type="file" accept=".json,application/json" style="display:none;" onchange="uploadRestoreFile(event)">
+        </label>
+      </div>
+    </div>
+
+    <div style="background:#f3e5f5; border:2px solid #ab47bc; border-radius:18px; padding:16px;">
+      <h3 style="margin:0 0 8px; color:#4a148c;">方式二：文字碼快速複製備份 / 貼上還原</h3>
+      <textarea class="excel-input" id="backup-code-box" placeholder="點擊下方「產生並複製備份碼」，或在此貼上備份碼進行還原..."></textarea>
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <button class="btn-small" onclick="generateAndCopyBackupText()">📋 產生並複製備份碼</button>
+        <button class="btn-small success" onclick="restoreFromBackupText()">✅ 從上方文字碼還原</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== 新增 EXCEL 題目管理面板 ==================== -->
+<div class="modal-backdrop" id="excel-modal">
+  <div class="modal-box">
+    <div class="modal-top">
+      <h2>➕ 從 EXCEL 直接複製貼上新增題目</h2>
+      <button class="btn-small" onclick="closeModals()">✖ 關閉</button>
+    </div>
+
+    <h3 style="margin:8px 0 4px; color:#2e7d32;">🌳 貼上【第一階段：蘋果樹宏觀分類表】資料列</h3>
+    <textarea class="excel-input" id="excel-tree-input" placeholder="直接在此貼上 Excel 的蘋果樹表格列..."></textarea>
+
+    <h3 style="margin:8px 0 4px; color:#1565c0;">🫧 貼上【第二階段：泡泡防衛戰細節填空表】資料列</h3>
+    <textarea class="excel-input" id="excel-bubble-input" placeholder="直接在此貼上 Excel 的泡泡題庫表格列..."></textarea>
+
+    <div style="display:flex; justify-content:space-between; margin-top:8px; flex-wrap:wrap; gap:10px;">
+      <button class="btn-small" style="background:#d32f2f;" onclick="resetAllDefaultData()">🔄 還原程式碼內建題庫（保留成績與燈泡）</button>
+      <button class="btn-small success" style="font-size:17px; padding:10px 24px;" onclick="importExcelData()">✅ 立即匯入並儲存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== 三大主題定義 ====================
+const THEME_CONFIG = {
+  "一": { key: "一", title: "主題一：「一國兩制」下的香港", subtitle: "暖色晨曦主題（預備加入題目）", bodyClass: "theme-1", cardClass: "t1" },
+  "二": { key: "二", title: "主題二：改革開放以來的國家", subtitle: "翡翠山河主題（預備加入題目）", bodyClass: "theme-2", cardClass: "t2" },
+  "三": { key: "三", title: "主題三：互聯相依的當代世界", subtitle: "環球星空主題", bodyClass: "theme-3", cardClass: "t3" }
+};
+
+// ============================================================================
+// ▼▼▼ 請將「內建 NEW GAME.xlsx 完整資料庫」貼在下方兩個陣列中 ▼▼▼
+// ============================================================================
+const DEFAULT_TREES = [
+  {
+    "id": "1.1", "theme": "三", "chapter": "一", "section": "1.1",
+    "title": "經濟全球化的含義與定義",
+    "correct": ["本地與全球聯繫", "跨地域的生產及貿易", "原料及勞動力可在全球不斷流動", "各經濟體互相影響"],
+    "wrong": ["政治多極化趨勢", "文化霸權主義", "全球氣候治理框架", "區域軍事同盟", "單邊貿易保護主義", "國際司法管轄權"]
+  },
+  {
+    "id": "1.2", "theme": "三", "chapter": "一", "section": "1.2",
+    "title": "經濟全球化急速發展的原因",
+    "correct": ["交通運輸進步", "資訊科技發達", "各地政府推動", "跨國企業推動"],
+    "wrong": ["人口老齡化趨勢", "傳統農業轉型", "地方保護主義抬頭", "單一貨幣政策", "國際軍事干預", "文化同質化現象", "宗教信仰傳播", "社會福利制度完善", "自然資源枯竭", "本土消費主義盛行", "綠化帶城市規劃", "外匯管制收緊"]
+  },
+  {
+    "id": "1.3", "theme": "三", "chapter": "一", "section": "1.3",
+    "title": "經濟全球化的主要表現（市場與生產一體化）",
+    "correct": ["原料市場一體化", "全球生產鏈形成", "商品市場一體化", "勞動市場一體化", "金融市場一體化"],
+    "wrong": ["稅務制度一體化", "社會福利均等化", "政治體制單一化", "軍事防禦共同體", "司法審判全球化", "教育課程標準化", "傳統文化保育化", "農業自給自足化", "國有企業壟斷化", "基礎設施私有化", "能源消耗配額化", "匯率固定化機制", "關稅壁壘制度化", "知識產權去監管化", "勞工福利劃一化"]
+  },
+  {
+    "id": "2.1", "theme": "三", "chapter": "一", "section": "2.1",
+    "title": "主要的國際經濟組織（全球性與區域性）",
+    "correct": ["國際貨幣基金組織 (全球性)", "世界銀行集團 (全球性)", "世界貿易組織 (全球性)", "東南亞國家聯盟 (區域性)", "亞太經濟合作組織 (區域性)", "歐洲聯盟 (區域性)", "亞洲基礎設施投資銀行 (區域性)"],
+    "wrong": ["世界衛生組織 (全球性)", "北大西洋公約組織 (區域性)", "國際法院 (全球性)", "聯合國教育科學及文化組織 (全球性)", "國際刑事警察組織 (全球性)", "綠色和平組織 (區域性)", "無國界醫生 (區域性)", "國際奧林匹克委員會 (全球性)", "聯合國安全理事會 (全球性)", "國際原子能機構 (全球性)", "世界氣象組織 (全球性)", "國際勞工組織 (全球性)", "聯合國難民署 (全球性)", "國際紅十字會 (全球性)", "世界自然基金會 (全球性)", "國際海事組織 (區域性)", "聯合國環境規劃署 (全球性)", "國際民用航空組織 (區域性)", "世界知識產權組織 (全球性)", "國際電信聯盟 (區域性)", "聯合國兒童基金會 (全球性)"]
+  },
+  {
+    "id": "2.2", "theme": "三", "chapter": "一", "section": "2.2",
+    "title": "國際經濟組織的作用",
+    "correct": ["協調國際貿易", "促進國際合作", "應對經濟危機"],
+    "wrong": ["統一全球貨幣匯率", "干預成員國內政選舉", "組建跨國維和部隊", "制定各國刑事法律", "壟斷全球能源供應", "強制推行單一官方語言", "取消各國海關邊境", "統一全球企業稅率", "直接管理跨國企業營運"]
+  },
+  {
+    "id": "2.3", "theme": "三", "chapter": "一", "section": "2.3",
+    "title": "國際經濟組織的局限",
+    "correct": ["權力分配不均", "決議約束力不足", "貸款援助引來爭議"],
+    "wrong": ["成員國數量過度膨脹", "完全取代主權國家政府", "強制沒收跨國企業資產", "全面禁止區域自由貿易", "剝奪發展中國家參會資格", "過度保護受援國社會福利", "免除所有貧窮國家債務", "壟斷全球科技專利技術", "實施全球軍事獨裁統治"]
+  },
+  {
+    "id": "3.1_3.2", "theme": "三", "chapter": "一", "section": "3.1 & 3.2",
+    "title": "跨國企業的意思與海外發展模式",
+    "correct": ["業務分散多國", "全球採購", "國際分工", "全球行銷", "建立企業品牌", "制度化管理", "「全球在地化」策略", "上市與併購"],
+    "wrong": ["國有化壟斷經營", "單一本土市場採購", "家族式世襲管理", "封閉式自給自足", "去品牌化價格戰", "強制文化同質化", "全面撤資回流本國", "實行計劃經濟配給", "依賴政府財政補貼", "限制外資持股比例", "推行貿易保護壁壘", "實施固定匯率結算", "單邊設定進口配額", "禁止技術跨境轉移", "強制勞工終身僱用", "統一全球零售定價", "取消海外分銷網絡", "排斥本土文化元素", "全面採用手工藝生產", "限制企業跨國借貸", "壟斷基礎公共服務", "實行零庫存閉門生產", "剝奪海外分部自主權", "強制推行單一語言包裝"]
+  },
+  {
+    "id": "3.3_pos", "theme": "三", "chapter": "一", "section": "3.3 (正面)",
+    "title": "跨國企業帶來的正面影響",
+    "correct": ["帶動經濟增長 (國家)", "推動產業轉型 (國家)", "促進企業發展 (企業)", "增加消費選擇 (消費者)", "提供就業機會 (勞工)"],
+    "wrong": ["消除全球通貨膨脹 (國家)", "實現財富絕對平均 (消費者)", "全面免除發展中國家外債 (國家)", "保障傳統手工藝壟斷地位 (企業)", "統一全球最低工資標準 (勞工)", "消除跨國周期性金融危機 (國家)", "完全取代本土中小型企業 (企業)", "強制普及免費高等教育 (勞工)", "實現全球零碳排放目標 (國家)", "消除城鄉醫療資源差距 (消費者)", "保障初級農產品高價收購 (企業)", "統一各國環保執法標準 (國家)", "全面消除結構性失業 (勞工)", "實現全球稅率完全劃一 (消費者)", "無償轉讓核心專利技術 (企業)"]
+  },
+  {
+    "id": "3.3_neg", "theme": "三", "chapter": "一", "section": "3.3 (負面)",
+    "title": "跨國企業帶來的負面影響",
+    "correct": ["造成經濟波動 (國家)", "擴大貧富差距 (國家)", "打擊中小企業 (企業)", "消費者利益受損 (消費者)", "生產者權益受損 (勞工)", "環境污染及資源浪費 (環境)"],
+    "wrong": ["導致全球人口急劇萎縮 (國家)", "引發主權國家軍事吞併 (國家)", "強制廢除各國傳統宗教 (國家)", "全面癱瘓全球互聯網通訊 (企業)", "導致基礎農業完全消失 (勞工)", "強制推行單一政治體制 (國家)", "完全切斷國際貿易往來 (企業)", "造成全球貨幣全面貶值 (國家)", "剝奪公民基本選舉權利 (消費者)", "強制解散所有國際經濟組織 (國家)", "全面禁止跨國人口流動 (勞工)", "導致全球科技研發停滯 (企業)", "強制沒收私人合法財產 (消費者)", "引發全球性糧食配給制 (環境)", "徹底摧毀全球交通網絡 (國家)", "強制實施高關稅壁壘 (企業)", "全面禁止本土文化傳播 (消費者)", "導致全球金融市場永久關閉 (國家)"]
+  },
+  {
+    "id": "4.1 A", "theme": "三", "chapter": "一", "section": "4.1 A",
+    "title": "勞動市場的流動形式",
+    "correct": ["職位轉移", "出差公幹", "勞務輸出", "海外應徵", "移民定居"],
+    "wrong": ["政治難民庇護", "強制勞役配給", "軍事徵兵調動", "非法偷渡居留", "跨國世襲繼承", "外交豁免特權", "區域旅遊觀光", "跨國交換生計劃", "國際志工服務", "跨境醫療就診", "海外政治流亡", "跨國婚姻團聚", "宗教朝聖活動", "國際文化巡演", "短期學術考察"]
+  },
+  {
+    "id": "4.1 B", "theme": "三", "chapter": "一", "section": "4.1 B",
+    "title": "全球勞動市場流動的原因",
+    "correct": ["交通和通訊進步", "國際分工發展", "勞力供求不平衡", "人才競爭激烈"],
+    "wrong": ["全球統一最低工資", "各國取消邊境海關", "傳統農業全面復興", "單一官方語言普及", "國際軍事同盟擴張", "全球出生率同步上升", "貿易保護主義盛行", "各國實行計劃經濟", "社會福利完全均等", "跨國企業全面撤資", "全球氣候急劇變暖", "宗教信仰高度統一"]
+  },
+  {
+    "id": "4.1 C", "theme": "三", "chapter": "一", "section": "4.1 C",
+    "title": "全球勞動市場流動的影響",
+    "correct": ["輸出地舒緩失業、匯款回鄉、推動產業(正)", "輸出地削弱發展動力、浪費教育研發資源(負)", "輸入地帶來知識技術經驗、促進社會經濟發展(正)", "輸入地爭奪就業機會、生活方式產生矛盾(負)"],
+    "wrong": ["輸出地人口過度膨脹(負)", "輸出地完全實現工業化(正)", "輸出地消除城鄉差距(正)", "輸出地外匯儲備枯竭(負)", "輸入地物價全面下跌(正)", "輸入地傳統文化完全消失(負)", "輸入地實現零失業率(正)", "輸入地社會福利全面取消(負)", "全球貧富差距徹底消除(正)", "各國勞工法例完全統一(正)", "跨國企業利潤大幅萎縮(負)", "國際貿易壁壘全面瓦解(正)"]
+  },
+  {
+    "id": "4.2 A", "theme": "三", "chapter": "一", "section": "4.2 A",
+    "title": "金融市場開放與融合的表現",
+    "correct": ["資本全球流動", "金融市場國際化", "金融機構國際化", "貨幣國際化", "金融監管全球化"],
+    "wrong": ["全球單一法定貨幣", "各國央行完全合併", "全面取消外匯交易", "全球稅率強制劃一", "國有銀行壟斷市場", "廢除所有金融監管", "實施固定匯率制度", "禁止跨國企業集資", "全面普及實物交易", "取消私人銀行帳戶", "限制外資銀行入境", "強制沒收投機資本", "統一全球存貸利率", "關閉所有證券交易所", "實行計劃金融配給"]
+  },
+  {
+    "id": "4.2 B", "theme": "三", "chapter": "一", "section": "4.2 B",
+    "title": "金融市場開放與融合的原因",
+    "correct": ["金融自由化", "跨國企業發展", "科技進步及應用", "金融機構創新"],
+    "wrong": ["貿易保護主義抬頭", "傳統金本位制復辟", "各國收緊外匯管制", "全球實體經濟萎縮", "跨國軍事衝突頻繁", "國際能源價格暴跌", "發展中國家免除外債", "全球人口結構老化", "單邊經濟制裁普及", "國有企業壟斷金融", "傳統郵政系統復興", "各國大幅提高關稅"]
+  },
+  {
+    "id": "4.2 C", "theme": "三", "chapter": "一", "section": "4.2 C",
+    "title": "金融市場開放與融合的影響",
+    "correct": ["推動財富增長 (正)", "促進經貿發展 (正)", "有利金融業成長 (正)", "金融風險湧現 (負)", "增加監管難度 (負)", "削弱經濟主權 (負)"],
+    "wrong": ["徹底消除金融危機(正)", "實現全球財富均分(正)", "發展中國家主導政策(正)", "全面取代實體貿易(正)", "各國完全喪失立法權(負)", "全球通貨膨脹歸零(正)", "中小企業壟斷市場(負)", "跨國犯罪徹底根除(正)", "外匯儲備失去作用(負)", "各國稅收大幅暴跌(負)", "虛擬貨幣取代法幣(負)", "國際經濟組織解散(負)", "全球利率完全固定(正)", "消除所有投機活動(正)", "徹底解決主權債務(正)", "強制統一各國財政(正)", "全面禁止資本外流(正)", "保障所有投資零風險(正)"]
+  },
+  {
+    "id": "5.1 & 5.2",
+    "theme": "三",
+    "chapter": "一",
+    "section": "5.1 & 5.2",
+    "title": "新經濟的興起原因",
+    "correct": [
+      "資訊科技發展",
+      "經濟全球化",
+      "傳統產業升級",
+      "勞動及消費市場轉變"
+    ],
+    "wrong": [
+      "傳統重工業復興",
+      "計劃經濟配給制度",
+      "單一本土市場保護",
+      "天然資源大規模開採",
+      "人口出生率急劇上升",
+      "貿易保護主義盛行",
+      "固定匯率制度確立",
+      "勞動力密集型農業擴張",
+      "跨國軍事同盟建立",
+      "政府全面接管私營企業",
+      "外匯管制政策收緊",
+      "傳統手工藝壟斷市場",
+      "全球實體店鋪擴張",
+      "取消知識產權保護",
+      "強制統一消費模式"
+    ]
+  },
+  {
+    "id": "5.3",
+    "theme": "三",
+    "chapter": "一",
+    "section": "5.3",
+    "title": "新經濟的特徵",
+    "correct": [
+      "人力資源和創新是核心生產要素",
+      "依賴新科技基礎設施 (如互聯網、大數據中心等)",
+      "新產業以新技術應用產業化為基礎",
+      "新業態能產生個性化產品",
+      "新商業模式可以把互聯網與產業融合"
+    ],
+    "wrong": [
+      "土地與天然資源主導",
+      "傳統交通基建壟斷",
+      "勞動密集型代工模式",
+      "單一實體零售業態",
+      "國有壟斷定價機制",
+      "高耗能重工業體系",
+      "家族世襲管理模式",
+      "封閉式自給自足經濟",
+      "依賴廉價勞動力擴張",
+      "單向線性供應鏈",
+      "傳統媒介單向宣傳",
+      "標準化流水線生產",
+      "政府行政指令配給",
+      "高關稅壁壘保護",
+      "實物貨幣結算體系"
+    ]
+  },
+  {
+    "id": "5.4 A",
+    "theme": "三",
+    "chapter": "一",
+    "section": "5.4 A",
+    "title": "新經濟對個人發展的影響（消費方面）",
+    "correct": [
+      "消費者選擇增加",
+      "刺激消費意欲",
+      "消費方式轉變",
+      "支付方式多元化",
+      "產品和服務升級",
+      "企業與消費者互動",
+      "消費權益的保障"
+    ],
+    "wrong": [
+      "全面取消實體貨幣",
+      "強制統一全球物價",
+      "徹底消除網絡詐騙",
+      "消費者完全主導企業定價",
+      "政府包辦所有售後服務",
+      "傳統零售店完全消失",
+      "全面禁止跨境網購",
+      "取消所有消費稅項",
+      "實行憑票定量配給",
+      "消費品款式完全劃一",
+      "企業停止投放廣告宣傳",
+      "強制公開個人消費私隱",
+      "消除所有衝動消費行為",
+      "統一全球退換貨法律",
+      "全面淘汰電子支付工具",
+      "限制消費者跨區購買",
+      "保障所有網購零風險",
+      "強制推行單一支付平台",
+      "取消企業客戶服務部門",
+      "完全依賴中間商分銷",
+      "徹底解決過度消費問題"
+    ]
+  },
+  {
+    "id": "5.4 B",
+    "theme": "三",
+    "chapter": "一",
+    "section": "5.4 B",
+    "title": "新經濟對個人發展的影響（就業方面）",
+    "correct": [
+      "新舊職位的消長",
+      "就業形式多樣化",
+      "計薪方式多樣化",
+      "勞工權益的保障"
+    ],
+    "wrong": [
+      "全面實行終身僱用制",
+      "徹底消除結構性失業",
+      "強制統一全球最低工資",
+      "傳統低技術職位大幅增加",
+      "全面禁止自由職業模式",
+      "政府包辦所有青年就業",
+      "取消所有績效獎金制度",
+      "完全淘汰遙距工作模式",
+      "強制所有勞工簽訂長約",
+      "外判工作獲雙倍法定保障",
+      "徹底解決人力資源錯配",
+      "全面普及固定月薪制度"
+    ]
+  },
+  {
+    "id": "5.5",
+    "theme": "三",
+    "chapter": "一",
+    "section": "5.5",
+    "title": "新經濟對香港發展的影響",
+    "correct": [
+      "促進香港經濟發展",
+      "鞏固香港國際金融中心地位",
+      "推動產業升級轉型",
+      "推動科研發展",
+      "改變市民生活模式",
+      "維持國際城市地位",
+      "面對挑戰和困難"
+    ],
+    "wrong": [
+      "全面取代傳統金融業",
+      "轉型為重工業生產基地",
+      "徹底消除傳統行業矛盾",
+      "所有初創企業保證盈利",
+      "完全淘汰實體零售店鋪",
+      "全面取消外資來港限制",
+      "實現本地科研零風險",
+      "強制所有學校取消面授",
+      "徹底杜絕網絡詐騙案件",
+      "實現初級農業自給自足",
+      "取消香港交易所上市審查",
+      "完全依賴政府財政補貼",
+      "強制統一市民消費模式",
+      "全面禁止傳統的士營運",
+      "消除所有跨境貿易壁壘",
+      "將核心商業區遷往郊野",
+      "完全取代大灣區製造業",
+      "免除所有科技企業稅項",
+      "強制海外人才定居香港",
+      "徹底解決土地房屋短缺",
+      "全面普及無人駕駛公交"
+    ]
+  },
+  {
+    "id": "5.6",
+    "theme": "三",
+    "chapter": "一",
+    "section": "5.6",
+    "title": "新經濟對中國發展的影響",
+    "correct": [
+      "推動產業升級轉型",
+      "減緩經濟下行壓力",
+      "拓寬國際市場",
+      "提升科技水平",
+      "改變民眾生活",
+      "有利可持續發展",
+      "出現監管困難",
+      "遇到技術挑戰",
+      "導致地區發展差距"
+    ],
+    "wrong": [
+      "全面淘汰傳統第一產業",
+      "徹底消除東西部發展差距",
+      "實現所有核心晶片完全自給",
+      "全面取消各行業市場監管",
+      "強制全國統一薪酬標準",
+      "完全依賴外國技術引進",
+      "徹底解決全國人口老化",
+      "全面禁止私營企業發展",
+      "取消所有實體醫療機構",
+      "強制全面使用現金交易",
+      "徹底消除城鄉收入差距",
+      "實現全國零碳排放目標",
+      "全面取代國有企業地位",
+      "取消所有進出口關稅",
+      "強制高校全面改為網課",
+      "完全消除產能過剩問題",
+      "停止一切海外人才引進",
+      "大幅削減國家科研經費",
+      "全面禁止共享經濟平台",
+      "徹底根除網絡消費糾紛",
+      "強制中西部企業遷往東部",
+      "全面實行計劃經濟配給",
+      "取消戰略性新興產業扶持",
+      "完全壟斷全球高端製造業",
+      "徹底解決全國醫療資源不足",
+      "全面禁止中國品牌出海",
+      "強制所有企業轉型為獨角獸"
+    ]
+  },
+  {
+    "id": "ch二_1 & 1.1",
+    "theme": "三",
+    "chapter": "二",
+    "section": "1 & 1.1",
+    "title": "人工智能",
+    "correct": [
+      "由人類製造出來",
+      "能夠模擬人類思維過程",
+      "能透過閱讀大量資料進行訓練並歸納知識",
+      "能按傳感器測出數據進行自動運作",
+      "現時AI只是「弱人工智能」，只能完成特定工作"
+    ],
+    "wrong": [
+      "蒸汽機動力普及",
+      "電氣化流水線轉型",
+      "傳統機械手工操作",
+      "純人腦記憶運算",
+      "強人工智能全面普及",
+      "完全無條件自動駕駛",
+      "徹底取代人類道德判斷",
+      "消除所有就業結構失衡",
+      "單一領域硬件壟斷",
+      "全面停止機器自我學習",
+      "強制公開個人生物特徵",
+      "廢除所有網絡保安系統",
+      "人工干預所有數據感測",
+      "全面禁止語音識別技術",
+      "完全淘汰智能手機應用"
+    ]
+  },
+  {
+    "id": "ch二_1.2",
+    "theme": "三",
+    "chapter": "二",
+    "section": "1.2",
+    "title": "大數據",
+    "correct": [
+      "數據量大",
+      "種類多樣",
+      "處理快速",
+      "營銷、金融應用",
+      "防疫、物流應用"
+    ],
+    "wrong": [
+      "單一來源紙本紀錄",
+      "固定格式靜態資料庫",
+      "人工抽樣慢速統計",
+      "全面消除數據噪音",
+      "百分百精準預測未來",
+      "強制企業無償共享數據",
+      "完全量化人類情感道德",
+      "徹底杜絕金融洗黑錢",
+      "無須整合直接應用",
+      "永久無限期數據時效",
+      "完全取代傳統物流運輸",
+      "消除所有商業法律風險"
+    ]
+  },
+  {
+    "id": "ch二_1.3",
+    "theme": "三",
+    "chapter": "二",
+    "section": "1.3",
+    "title": "雲端儲存",
+    "correct": [
+      "避免資料遺失",
+      "簡單方便於互聯網存取或共享",
+      "成本低廉，用戶不用購買和維修硬件",
+      "應用於遙距工作及串流平台",
+      "由第三方操作，一旦雲端停機或資料被盜會影響用家"
+    ],
+    "wrong": [
+      "單機離線硬碟備份",
+      "企業自建大型機房",
+      "強制購買昂貴硬件設備",
+      "完全離線資料存取",
+      "消除所有網絡黑客攻擊",
+      "用戶擁有絕對硬件控制權",
+      "保證全年零停機故障",
+      "取消第三方機構管理",
+      "全面禁止跨部門資料共享",
+      "強制使用實體光碟傳播",
+      "徹底杜絕資料外洩風險",
+      "完全淘汰網上串流平台",
+      "限制員工異地存取檔案",
+      "無須連接互聯網運作",
+      "強制用戶自行維護系統安全"
+    ]
+  },
+  {
+    "id": "ch二_2",
+    "theme": "三",
+    "chapter": "二",
+    "section": "2",
+    "title": "新科技發展對人類日常生活的影響",
+    "correct": [
+      "改變消費模式",
+      "方便交通出行",
+      "改善環境素質",
+      "保護公眾安全",
+      "衍生社會問題（失業、數碼鴻溝、私隱、安全、責任）"
+    ],
+    "wrong": [
+      "全面恢復傳統現金消費",
+      "徹底消除城市交通擠塞",
+      "完全根除全球環境污染",
+      "百分百阻止自然災害發生",
+      "全面消除基層數碼鴻溝",
+      "保障低技術工人終身就業",
+      "徹底杜絕網絡黑客入侵",
+      "完全釐清人工智能法律責任",
+      "強制取消個人化商品推薦",
+      "全面禁止安裝公共監控系統",
+      "徹底解決社會貧富懸殊",
+      "完全淘汰公共運輸工具",
+      "強制所有市民使用智能設備",
+      "全面取消個人私隱法例保護",
+      "徹底消除所有網絡詐騙風險"
+    ]
+  },
+  {
+    "id": "ch三_1",
+    "theme": "三",
+    "chapter": "三",
+    "section": "1",
+    "title": "互聯網發展的階段",
+    "correct": [
+      "Web 1.0（以資訊為中心／網絡）",
+      "Web 2.0（以人為本／社交網絡）",
+      "Web 3.0（以機器為中心／語意網）",
+      "Web 4.0（以代理為中心／無處不在）"
+    ],
+    "wrong": [
+      "Web 1.0 (傳統印刷媒介階段)",
+      "Web 2.0 (單向廣播電視階段)",
+      "Web 1.0 (蒸汽動力機械階段)",
+      "Web 3.0 (電氣化流水線階段)",
+      "Web 3.0 (模擬訊號電話階段)",
+      "Web 4.0 (大型機房離線階段)",
+      "Web 3.0 (區域局域網封閉階段)",
+      "Web 4.0 (量子霸權壟斷階段)",
+      "Web 4.0 (全腦意識上傳階段)",
+      "Web 2.0 (純實物交易階段)",
+      "Web 2.0 (跨國電報通訊階段)",
+      "Web 3.0 (人工交換機階段)"
+    ]
+  },
+  {
+    "id": "ch三_1.1",
+    "theme": "三",
+    "chapter": "三",
+    "section": "1.1",
+    "title": "互聯網（定義、發展與應用）",
+    "correct": [
+      "可通過電子郵件互相傳遞信息",
+      "以即時通訊軟件分享文件和圖像等",
+      "可運用搜尋器尋找資料",
+      "以物聯網把各種電子裝置以互聯網連接起來",
+      "以全球各地的電腦網絡互相連接"
+    ],
+    "wrong": [
+      "全球單一硬件製造",
+      "摩斯密碼電報網",
+      "傳統郵政派遞協定",
+      "內聯網封閉系統",
+      "有線固網電話普及",
+      "實體信件傳遞",
+      "紙本圖書借閱",
+      "人工檔案室檢索",
+      "傳統機械自動化",
+      "衛星軍事防禦網",
+      "跨國海底電纜壟斷",
+      "單機版光碟軟件",
+      "區域廣播電台",
+      "公共電話亭網絡",
+      "傳真機文件傳輸",
+      "菲林沖晒分享",
+      "實地街頭問卷搜尋",
+      "蒸汽動力交通網",
+      "全球統一作業系統",
+      "強制實名制局域網",
+      "離線大型資料庫",
+      "人工翻譯傳訊服務",
+      "傳統報紙印刷發行",
+      "跨國速遞物流網",
+      "無條件自動駕駛網",
+      "全球免費硬件配給",
+      "單向電視購物頻道"
+    ]
+  },
+  {
+    "id": "ch三_1.2",
+    "theme": "三",
+    "chapter": "三",
+    "section": "1.2",
+    "title": "社交媒體（定義、發展與應用）",
+    "correct": [
+      "幫助政府機構提高施政效能",
+      "協助企業掌握市場狀況和消費者喜好",
+      "能促進市民資訊的傳遞和交流",
+      "以互聯網為基礎的溝通平台",
+      "網上論壇、社交網站能促進社羣建立"
+    ],
+    "wrong": [
+      "傳統紙媒專欄",
+      "官方新聞發布會",
+      "單向電視廣告",
+      "跨國企業內部電郵",
+      "政府機密檔案庫",
+      "實體社區中心集會",
+      "電話推銷呼叫中心",
+      "街頭派發傳單",
+      "企業財務報表審計",
+      "個人私人日記本",
+      "傳統書信筆友會",
+      "政府稅務徵收系統",
+      "企業生產線監控",
+      "線下讀書分享會",
+      "廣播電台點唱節目",
+      "官方憲報刊登",
+      "實體零售店櫥窗",
+      "傳統街市議價交流",
+      "跨國軍事情報網",
+      "閉門學術研討會",
+      "強制公眾投票系統"
+    ]
+  },
+  {
+    "id": "ch三_1.3",
+    "theme": "三",
+    "chapter": "三",
+    "section": "1.3",
+    "title": "即時通訊軟件（定義、發展與應用）",
+    "correct": [
+      "隨時隨地與親友聯絡",
+      "聯繫人際關係",
+      "協助企業達到促銷效果",
+      "以即時通訊技術進行網上交流",
+      "可發送文字及各種檔案"
+    ],
+    "wrong": [
+      "傳統電報拍發系統",
+      "跨國長途固網電話",
+      "郵局特快專遞服務",
+      "傳呼機單向留言",
+      "企業實體佈告欄",
+      "公開新聞廣播網",
+      "線下客戶服務櫃枱",
+      "傳統紙本傳真機",
+      "政府緊急防空警報",
+      "飛鴿傳書通訊",
+      "業餘無線電對講機",
+      "電視直播新聞台",
+      "報章分類小廣告",
+      "企業年度股東大會",
+      "智能家居溫控系統",
+      "跨國銀行匯款系統",
+      "自動櫃員機網絡",
+      "傳統郵箱投遞服務"
+    ]
+  },
+  {
+    "id": "ch三_2",
+    "theme": "三",
+    "chapter": "三",
+    "section": "2",
+    "title": "資訊科技的發展特徵",
+    "correct": [
+      "資訊社會形成 (訊息化、數據化、智能化)",
+      "訊息傳播迅速廣泛",
+      "跨地域間溝通互動",
+      "資訊良莠不齊"
+    ],
+    "wrong": [
+      "工業社會全面復辟",
+      "傳統農業自給自足",
+      "紙本檔案永久保存",
+      "人工手動操作普及",
+      "訊息單向緩慢傳遞",
+      "區域封閉式溝通",
+      "資訊絕對真實可靠",
+      "官方壟斷所有資訊",
+      "全面消除網絡廣告",
+      "強制統一全球語言",
+      "完全淘汰電腦硬件",
+      "跨國實體會議普及",
+      "傳統書信往來增加",
+      "消除所有虛假新聞",
+      "網民放棄轉發訊息",
+      "取消所有社交平台",
+      "限制跨國數據流動",
+      "完全依賴人腦記憶"
+    ]
+  },
+  {
+    "id": "ch四_1",
+    "theme": "三",
+    "chapter": "四",
+    "section": "1",
+    "title": "甚麼是資訊素養？",
+    "correct": [
+      "能有效和符合道德地使用資訊",
+      "識別對資訊的需求",
+      "評估資訊的可靠性",
+      "運用資訊的正確方式",
+      "跟別人友好互動前應了解並遵守相關操守和法律",
+      "要小心識別及查核，防止虛假資訊傳播"
+    ],
+    "wrong": [
+      "壟斷網絡資訊傳播",
+      "強制實行網絡實名制",
+      "全面審查私人通訊",
+      "取消知識產權限制",
+      "無條件相信官方媒體",
+      "完全封鎖海外網站",
+      "強制統一公眾輿論",
+      "免除網絡言論法律責任",
+      "鼓勵匿名發放消息",
+      "全面禁止社交媒體互動",
+      "淘汰傳統紙媒出版",
+      "強制公開個人瀏覽紀錄",
+      "建立單一官方資訊平台",
+      "取消網絡私隱保護",
+      "全面禁止人工智能生成內容"
+    ]
+  },
+  {
+    "id": "ch四_2.1",
+    "theme": "三",
+    "chapter": "四",
+    "section": "2.1",
+    "title": "辨別虛假資訊",
+    "correct": [
+      "培養客觀、求真態度",
+      "善用事實查核資訊",
+      "檢查資訊內容",
+      "了解資訊來源"
+    ],
+    "wrong": [
+      "強制關閉所有內容農場",
+      "全面禁止政治宣傳",
+      "取消社交媒體轉發功能",
+      "政府預先審批所有帖文",
+      "徹底消除網絡同溫層",
+      "強制公開發帖者真實姓名",
+      "全面封殺即時通訊軟件",
+      "取消網站廣告收益機制",
+      "統一全球新聞報道標準",
+      "完全依賴人工智能查核",
+      "強制刪除所有偏頗報道",
+      "立法禁止使用誇張標題",
+      "全面取締自媒體營運",
+      "取消公眾評論時事權利",
+      "強制要求網民學歷認證",
+      "完全禁止修改網絡圖片",
+      "廢除新聞自由保障",
+      "強制所有網站收費瀏覽",
+      "全面禁止跨國資訊流通",
+      "取消匿名舉報機制",
+      "建立全球單一事實查核局"
+    ]
+  },
+  {
+    "id": "ch四_2.2",
+    "theme": "三",
+    "chapter": "四",
+    "section": "2.2",
+    "title": "使用科技的道德操守",
+    "correct": [
+      "保護電腦系統和資料",
+      "謹慎分享資訊",
+      "尊重知識產權",
+      "防範網絡欺凌"
+    ],
+    "wrong": [
+      "全面禁止使用公共Wi-Fi",
+      "強制公開所有個人密碼",
+      "完全取消免費軟件下載",
+      "以暴易暴反擊網絡欺凌",
+      "全面封鎖海外影視平台",
+      "強制所有網站開放源代碼",
+      "取消原創作品版權收費",
+      "鼓勵網民人肉搜尋起底",
+      "全面禁止網上轉載文章",
+      "強制安裝政府監控軟件",
+      "完全淘汰個人電腦設備",
+      "立法禁止在網上發表負評"
+    ]
+  },
+  {
+    "id": "ch四_2.3",
+    "theme": "三",
+    "chapter": "四",
+    "section": "2.3",
+    "title": "遵守相關法律",
+    "correct": [
+      "作者完成原創作品後即自動獲得版權",
+      "在網絡世界，創作者的版權同樣受保護",
+      "未經版權持有人授權而使用作業務用途屬違法行為",
+      "諷刺及評論時事可獲得豁免",
+      "版權持有人以任何電子模式向公眾傳播均受法律保障"
+    ],
+    "wrong": [
+      "永久無限期版權保護",
+      "全面禁止戲仿及諷刺作品",
+      "取消教育界授課豁免",
+      "聯線服務平台承擔全部刑責",
+      "強制所有原創作品免費共享",
+      "完全合法化非牟利盜版分發",
+      "廢除個人資料私隱保障",
+      "合法化正義目的之起底行為",
+      "全面禁止使用加密通訊軟件",
+      "取消聲音紀錄媒體轉換豁免",
+      "強制要求創作者實名註冊版權",
+      "全面豁免商業機構侵權責任",
+      "廢除安全港條文保障",
+      "禁止在網上評論時事政治",
+      "將所有網絡侵權列為死刑"
+    ]
+  }
+];
+
+const DEFAULT_QUESTIONS = [
+  {"sectionId": "1.1", "subtopic": "1 全球化的基本含義", "q": "全球化是指本地與全球各地之間的什麼得以加強？", "a": "聯繫", "d": ["競爭", "隔閡", "壁壘"]},
+  {"sectionId": "1.1", "subtopic": "1 全球化的基本含義", "q": "在全球化下，不同國家或地區之間漸漸怎樣，並互相影響及依存？", "a": "融為一體", "d": ["各自為政", "互不相干", "走向分裂"]},
+  {"sectionId": "1.1", "subtopic": "1 全球化的基本含義", "q": "不同國家或地區之間的互動不再受什麼因素的阻隔？", "a": "時間和空間", "d": ["法律和道德", "文化和宗教", "政治和軍事"]},
+  {"sectionId": "1.1", "subtopic": "1 全球化的基本含義", "q": "各地的人如同生活在同一條村落，彼此關係密切，世界好像變成了什麼？", "a": "地球村", "d": ["國際聯盟", "經濟共同體", "自由貿易區"]},
+  {"sectionId": "1.1", "subtopic": "1.1 經濟全球化的定義", "q": "經濟全球化是指什麼範圍的生產、貿易、金融投資等經濟活動日趨頻繁？", "a": "跨地域", "d": ["本土化", "單一國家", "封閉式"]},
+  {"sectionId": "1.1", "subtopic": "1.1 經濟全球化的定義", "q": "各種經濟要素（包括原料、勞動力、商品服務、資本等）可在全球怎樣運作？", "a": "不斷流動", "d": ["固定配給", "限制出境", "集中壟斷"]},
+  {"sectionId": "1.1", "subtopic": "1.1 經濟全球化的定義", "q": "各經濟體互相影響，依存日深，漸漸趨向什麼狀態？", "a": "一體化", "d": ["碎片化", "兩極化", "國有化"]},
+  {"sectionId": "1.2", "subtopic": "1.2 交通運輸進步", "q": "交通工具的運輸速度和什麼能力不斷提高？", "a": "運載量", "d": ["耗油量", "票價成本", "製造時間"]},
+  {"sectionId": "1.2", "subtopic": "1.2 交通運輸進步", "q": "隨著新的什麼設施建成，有助推動經濟全球化？", "a": "交通基礎設施", "d": ["軍事防禦設施", "文化康樂設施", "社會福利設施"]},
+  {"sectionId": "1.2", "subtopic": "1.2 交通運輸進步", "q": "交通運輸進步有助建設全球交通網絡，促進人口、資源、貨物的什麼活動？", "a": "跨境流動", "d": ["本地囤積", "內部消化", "單向輸出"]},
+  {"sectionId": "1.2", "subtopic": "1.2 資訊科技發達", "q": "哪兩種技術的不斷創新，促成了資訊科技發達？", "a": "通訊和互聯網", "d": ["農業和畜牧業", "紡織和冶金", "印刷和造紙"]},
+  {"sectionId": "1.2", "subtopic": "1.2 資訊科技發達", "q": "電郵、社交媒體、即時通訊軟件普及應用，便利各地民眾溝通、交流什麼資訊，促進跨地域經濟活動？", "a": "商業資訊", "d": ["軍事機密", "個人私隱", "娛樂八卦"]},
+  {"sectionId": "1.2", "subtopic": "1.2 各地政府推動", "q": "不少國家組建或加入什麼組織，以推動跨地域的經濟交流和合作？", "a": "國際經濟組織", "d": ["軍事防衛同盟", "國際法庭組織", "宗教慈善團體"]},
+  {"sectionId": "1.2", "subtopic": "1.2 各地政府推動", "q": "各地政府提倡什麼貿易政策，以推動經濟全球化？", "a": "自由貿易", "d": ["保護主義", "關稅壁壘", "配額限制"]},
+  {"sectionId": "1.2", "subtopic": "1.2 各地政府推動", "q": "各地政府放寬對人口、資金、商品、服務的什麼措施，推動跨地域經濟合作？", "a": "流動限制", "d": ["質量監管", "安全標準", "產權保護"]},
+  {"sectionId": "1.2", "subtopic": "1.2 跨國企業推動", "q": "哪類國家湧現大批跨國經營的企業？", "a": "發達國家", "d": ["最不發達國家", "內陸農業國家", "戰亂頻仍國家"]},
+  {"sectionId": "1.2", "subtopic": "1.2 跨國企業推動", "q": "這些跨國企業在不同國家或地區進行生產、銷售和什麼活動，令各地經濟緊密連在一起？", "a": "投資", "d": ["徵稅", "立法", "執法"]},
+  {"sectionId": "1.3", "subtopic": "A 原料市場一體化", "q": "企業從資源充裕的地方採購什麼？", "a": "原材料", "d": ["最終消費品", "奢侈品牌", "金融衍生工具"]},
+  {"sectionId": "1.3", "subtopic": "A 原料市場一體化", "q": "一些國家或地區之間訂立什麼協議，以應付經濟生產、社會建設和民眾生活所需？", "a": "原材料交易協議", "d": ["互不侵犯條約", "文化交流協定", "司法互助協議"]},
+  {"sectionId": "1.3", "subtopic": "B 全球生產鏈形成", "q": "企業會按各地的什麼條件，採用「國際分工」形式進行生產？", "a": "比較優勢", "d": ["人口密度", "國土面積", "歷史文化"]},
+  {"sectionId": "1.3", "subtopic": "B 全球生產鏈形成", "q": "企業採用「國際分工」形式，把什麼（如開發設計、加工裝配等）分散至不同國家或地區進行？", "a": "生產工序", "d": ["股權結構", "行政部門", "品牌商標"]},
+  {"sectionId": "1.3", "subtopic": "B 全球生產鏈形成", "q": "把生產工序分散至不同國家或地區進行，組成了跨地域的什麼網絡？", "a": "協作生產網絡", "d": ["社會保障網絡", "政治情報網絡", "慈善救濟網絡"]},
+  {"sectionId": "1.3", "subtopic": "C 商品市場一體化", "q": "企業擴展海外銷售網絡，形成什麼市場，令各地消費者均可購買該企業的商品或服務？", "a": "全球商品市場", "d": ["本地批發市場", "地下黑市市場", "政府採購市場"]},
+  {"sectionId": "1.3", "subtopic": "D 勞動市場一體化", "q": "什麼機構在各地招聘負責生產、銷售和管理等不同工作的勞工，並把員工調往不同分部工作？", "a": "跨國企業", "d": ["地方政府", "非政府組織", "傳統家庭作坊"]},
+  {"sectionId": "1.3", "subtopic": "D 勞動市場一體化", "q": "部分國家或地區會輸出勞工，或因某些工種勞工不足而採取什麼措施，促進了各地勞工市場的流動和聯繫？", "a": "輸入外勞", "d": ["縮減工時", "強制退休", "提高關稅"]},
+  {"sectionId": "1.3", "subtopic": "E 金融市場一體化", "q": "各地金融市場聯繫起來，形成一個接近全天候運作的什麼系統？", "a": "全球交易系統", "d": ["實物交換系統", "單一貨幣系統", "封閉結算系統"]},
+  {"sectionId": "1.3", "subtopic": "E 金融市場一體化", "q": "企業和投資者可利用什麼工具，無間斷地在不同交易所進行買賣證券等金融活動？", "a": "互聯網", "d": ["傳統郵政", "實體支票", "長途電話"]},
+  {"sectionId": "1.3", "subtopic": "E 金融市場一體化", "q": "由於各地金融市場存在什麼關係，當一地發生金融危機時，其他經濟體也會受到波及？", "a": "互相影響", "d": ["互相獨立", "惡性競爭", "零和博弈"]},
+  {"sectionId": "1.3", "subtopic": "E 金融市場一體化", "q": "當一地發生金融危機時，其他經濟體或會受到什麼影響？", "a": "衝擊", "d": ["庇護", "豁免", "補貼"]},
+  {"sectionId": "2.1", "subtopic": "2.1 主要的國際經濟組織", "q": "國際貨幣基金組織、世界銀行集團及世界貿易組織屬於哪一類型的國際經濟組織？", "a": "全球性", "d": ["區域性", "地方性", "雙邊性"]},
+  {"sectionId": "2.1", "subtopic": "2.1 主要的國際經濟組織", "q": "東盟、亞太經合組織、歐盟及亞投行屬於哪一類型的國際經濟組織？", "a": "區域性", "d": ["全球性", "單一國家性", "民間非牟利性"]},
+  {"sectionId": "2.1", "subtopic": "2.1 主要的國際經濟組織", "q": "國際貨幣基金組織、世界銀行集團及世界貿易組織，獲公認為協調和管理哪三個範疇的「三大支柱」？", "a": "世界經濟、貿易與金融", "d": ["國際政治、軍事與外交", "全球文化、教育與衛生", "區域環境、能源與氣候"]},
+  {"sectionId": "2.1", "subtopic": "2.1 主要的國際經濟組織", "q": "東盟、亞太經合組織、歐盟及亞投行對推動什麼進程起重要作用？", "a": "區域經濟一體化", "d": ["全球政治單極化", "區域軍事同盟化", "國際司法統一化"]},
+  {"sectionId": "2.2", "subtopic": "2.2 A 協調國際貿易", "q": "國際經濟組織鼓勵成員採取什麼措施，以構建自由貿易區？", "a": "開放市場", "d": ["封鎖邊境", "提高關稅", "實行配給制"]},
+  {"sectionId": "2.2", "subtopic": "2.2 A 協調國際貿易", "q": "國際經濟組織推動成員透過什麼方式，降低甚至取消關稅、進口配額等貿易障礙，建立多邊貿易關係？", "a": "談判、制定協議", "d": ["經濟制裁、貿易戰", "軍事威懾、外交斷交", "單邊立法、強制執行"]},
+  {"sectionId": "2.2", "subtopic": "2.2 A 協調國際貿易", "q": "國際經濟組織會對各成員的貿易政策進行什麼工作？", "a": "監察", "d": ["直接立法", "全面接管", "強制廢除"]},
+  {"sectionId": "2.2", "subtopic": "2.2 A 協調國際貿易", "q": "當出現貿易爭端時，國際經濟組織會擔當什麼角色，以化解貿易衝突？", "a": "仲裁者", "d": ["訴訟原告", "執法警察", "商業競爭者"]},
+  {"sectionId": "2.2", "subtopic": "2.2 B 促進國際合作", "q": "國際經濟組織定期舉行什麼活動，提供平台予各國或地區討論經貿合作？", "a": "領導人會議、論壇", "d": ["聯合軍事演習", "跨國文化藝術節", "國際體育運動會"]},
+  {"sectionId": "2.2", "subtopic": "2.2 C 應對經濟危機", "q": "國際經濟組織提供什麼具體協助，幫助貧窮或出現危機的國家或地區穩定經濟？", "a": "貸款、技術支援", "d": ["無償贈款、軍事保護", "武器裝備、情報支援", "移民配額、政治庇護"]},
+  {"sectionId": "2.2", "subtopic": "2.2 C 應對經濟危機", "q": "國際經濟組織協助出現危機的國家或地區穩定經濟，是為了避免經濟問題出現什麼情況？", "a": "蔓延", "d": ["公開透明", "受到關注", "轉化為順差"]},
+  {"sectionId": "2.3", "subtopic": "2.3 A 權力分配不均", "q": "政治和經濟實力較強的國家可投放較多資金和人手在國際經濟組織，而且掌握較大的什麼權力？", "a": "投票權", "d": ["司法審判權", "軍事指揮權", "領土管轄權"]},
+  {"sectionId": "2.3", "subtopic": "2.3 A 權力分配不均", "q": "實力較強的國家掌握較大投票權，經常在國際經濟組織中對會議方向起什麼作用？", "a": "主導", "d": ["旁觀", "盲從", "抵制"]},
+  {"sectionId": "2.3", "subtopic": "2.3 A 權力分配不均", "q": "實力較強的國家主導會議方向，往往藉此通過怎樣的經貿發展議案或條款？", "a": "有利自身", "d": ["損害本國", "絕對公平", "優先照顧弱國"]},
+  {"sectionId": "2.3", "subtopic": "2.3 B 決議約束力不足", "q": "國際經濟組織通常只訂出一些什麼內容，而無法強制執行？", "a": "原則和指引", "d": ["刑事法例和罰則", "具法律效力的憲法", "強制性行政命令"]},
+  {"sectionId": "2.3", "subtopic": "2.3 B 決議約束力不足", "q": "由於只訂出原則和指引，國際經濟組織無法約束誰去執行？", "a": "成員", "d": ["跨國企業股東", "國際恐怖組織", "地方非政府組織"]},
+  {"sectionId": "2.3", "subtopic": "2.3 B 決議約束力不足", "q": "部分締約國以什麼理由，徵收高額關稅、設定配額，不遵從協議，導致經貿糾紛？", "a": "保護本國產業", "d": ["推動全球自由貿易", "協助發展中國家", "響應環境保護公約"]},
+  {"sectionId": "2.3", "subtopic": "2.3 C 貸款援助引來爭議", "q": "一些國際經濟組織的貸款援助收取什麼，從而增加受援方的債務和經濟負擔？", "a": "較高利息", "d": ["高額關稅", "行政罰款", "政治保護費"]},
+  {"sectionId": "2.3", "subtopic": "2.3 C 貸款援助引來爭議", "q": "部分貸款附帶苛刻的條件，例如要求受援國在公共財政上採取什麼措施？", "a": "緊縮社會福利開支", "d": ["大幅增加公務員薪酬", "全面推行免費醫療", "擴大基礎設施補貼"]},
+  {"sectionId": "2.3", "subtopic": "2.3 C 貸款援助引來爭議", "q": "除了緊縮開支外，部分貸款還附帶要求受援方接受什麼苛刻條件？", "a": "組織監管", "d": ["軍事駐軍", "領土割讓", "文化同化"]},
+  {"sectionId": "2.3", "subtopic": "2.3 C 貸款援助引來爭議", "q": "貸款附帶的苛刻條件（如緊縮社福開支、接受組織監管等），會使受援方失去經濟政策的什麼？", "a": "主動權", "d": ["知情權", "參與權", "監督權"]},
+  {"sectionId": "3.1_3.2", "subtopic": "3.1 跨國企業的意思", "q": "跨國企業是指將業務（生產、銷售等）怎樣部署在多個國家或地區的企業？", "a": "分散", "d": ["集中", "封鎖", "壟斷"]},
+  {"sectionId": "3.1_3.2", "subtopic": "3.2 A 全球採購", "q": "跨國企業會從擁有什麼條件的國家或地區買入原材料？", "a": "豐富天然資源", "d": ["龐大消費市場", "高度發達金融", "嚴格環保法規"]},
+  {"sectionId": "3.1_3.2", "subtopic": "3.2 A 全球採購", "q": "不少發展中國家天然資源開發程度較低，原材料供應較怎樣，吸引跨國企業採購？", "a": "充裕", "d": ["短缺", "單一", "不穩"]},
+  {"sectionId": "3.1_3.2", "subtopic": "3.2 A 全球採購", "q": "發展中國家除了原材料供應較充裕外，其價格亦相對怎樣，令跨國企業紛紛到當地採購？", "a": "低廉", "d": ["高昂", "波動", "僵化"]},
+  {"sectionId": "3.1_3.2", "subtopic": "3.2 B 國際分工", "q": "跨國企業將生產工序分散到各地進行，從而形成什麼鏈條？", "a": "全球生產鏈", "d": ["單一供應鏈", "區域消費鏈", "本土資金鏈"]},
+  {"sectionId": "3.1_3.2", "subtopic": "3.2 B 國際分工", "q": "什麼生產模式是最常見的國際分工模式，即把生產工序外判給海外代工廠負責？", "a": "代工", "d": ["直營", "併購", "特許"]},
+  {"sectionId": "3.1_3.2", "subtopic": "3.2 C 全球行銷", "q": "跨國企業為促進商品在全球銷售，會在實體渠道設立什麼？", "a": "海外分店", "d": ["生產車間", "原料倉庫", "研發中心"]},
+  {"sectionId": "3.1_3.2", "subtopic": "3.2 C 全球行銷", "q": "除了設立海外分店及與各地分銷商合作外，跨國企業還會在互聯網上開設什麼以促進全球銷售？", "a": "網店", "d": ["討論區", "搜尋引擎", "社交平台"]},
+  {"sectionId": "3.1_3.2", "subtopic": "3.2 D 建立企業品牌", "q": "跨國企業藉廣告、什麼活動及社交媒體等，推廣品牌的理念、特色及最新產品資訊？", "a": "商業贊助", "d": ["政治捐獻", "司法訴訟", "軍事演習"]},
+  {"sectionId": "3.1_3.2", "subtopic": "3.2 D 建立企業品牌", "q": "透過廣告和商業贊助以外，跨國企業還會藉什麼網絡渠道推廣品牌的理念、特色及最新產品資訊？", "a": "社交媒體", "d": ["內部電郵", "政府公報", "學術期刊"]},
+  {"sectionId": "3.1_3.2", "subtopic": "3.2 D 建立企業品牌", "q": "推廣品牌並增加品牌知名度，能建立顧客的什麼心理？", "a": "消費信心", "d": ["儲蓄習慣", "投資風險", "炫耀心態"]},
+  {"sectionId": "3.1_3.2", "subtopic": "3.2 E 制度化管理", "q": "跨國企業實行制度化管理，目的是嚴密監督哪兩個核心過程？", "a": "生產和銷售", "d": ["立法和執法", "借貸和還款", "招聘和退休"]},
+  {"sectionId": "3.1_3.2", "subtopic": "3.2 E 制度化管理", "q": "如麥當勞採用高效性、可預測性、可操控性和什麼特性的管理模式經營，能提升營運效率及保持素質？", "a": "可計量性", "d": ["隨機應變性", "文化多元性", "模糊彈性"]},
+  {"sectionId": "3.1_3.2", "subtopic": "3.2 F 「全球在地化」策略", "q": "跨國企業因應不同地方的社會文化，為商品或服務注入各式什麼，從而刺激民眾消費？", "a": "本土元素", "d": ["外國意識", "高昂定價", "統一標準"]},
+  {"sectionId": "3.1_3.2", "subtopic": "3.2 G 上市與併購", "q": "跨國企業會在海外金融市場發行什麼金融工具，以籌集資金？", "a": "股票、債券", "d": ["鈔票、硬幣", "關稅、配額", "補貼、津貼"]},
+  {"sectionId": "3.1_3.2", "subtopic": "3.2 G 上市與併購", "q": "跨國企業會透過合併或收購不同地區的什麼對象，以擴展業務？", "a": "企業", "d": ["政府部門", "慈善機構", "國際組織"]},
+  {"sectionId": "3.1_3.2", "subtopic": "3.2 G 上市與併購", "q": "合併或收購不同地區的企業，能協助跨國企業進軍各地市場，並增加什麼指標？", "a": "市場佔有率", "d": ["員工流失率", "產品不良率", "銀行壞賬率"]},
+  {"sectionId": "3.1_3.2", "subtopic": "3.2 G 上市與併購", "q": "併購可吸納優秀生產技術、服務或管理模式，提升自身商品或服務的素質，從而增強什麼？", "a": "競爭力", "d": ["壟斷罰款", "稅務負擔", "行政成本"]},
+  {"sectionId": "3.3_pos", "subtopic": "3.3 帶動經濟增長", "q": "跨國企業促進國際什麼活動及金融發展，使全球經濟持續增長？", "a": "貿易", "d": ["援助", "制裁", "移民"]},
+  {"sectionId": "3.3_pos", "subtopic": "3.3 帶動經濟增長", "q": "跨國企業的投資能增加不少地方的什麼收入及政府稅收，有助當地政府投放資源發展社會經濟？", "a": "外匯", "d": ["外債", "罰款", "關稅"]},
+  {"sectionId": "3.3_pos", "subtopic": "3.3 帶動經濟增長", "q": "當地政府投放資源發展社會經濟（如改善基礎建設），除了提升國力和競爭力，也能改善民眾的什麼？", "a": "生活質素", "d": ["政治權利", "宗教信仰", "文化傳統"]},
+  {"sectionId": "3.3_pos", "subtopic": "3.3 推動產業轉型", "q": "勞力密集型工序分配到發展中國家，有助當地什麼產業迅速發展，令第二產業在經濟結構的重要性提高？", "a": "工業", "d": ["農業", "金融業", "旅遊業"]},
+  {"sectionId": "3.3_pos", "subtopic": "3.3 推動產業轉型", "q": "高技術工序分配到已發展國家專責處理，有助集中資源發展第三產業，走向什麼經濟模式？", "a": "知識型經濟", "d": ["勞力型經濟", "計劃型經濟", "自給自足經濟"]},
+  {"sectionId": "3.3_neg", "subtopic": "3.3 造成經濟波動", "q": "跨國企業宣布撤資、削減規模、破產，可能會導致工人出現什麼問題，影響各地經濟發展？", "a": "減薪或失業", "d": ["升職或加薪", "提早退休", "轉投公務員"]},
+  {"sectionId": "3.3_neg", "subtopic": "3.3 擴大貧富差距", "q": "跨國企業的國際分工，使負責高增值工序的什麼國家取得生產的大部分利潤？", "a": "已發展國家", "d": ["發展中國家", "最不發達國家", "資源輸出國家"]},
+  {"sectionId": "3.3_neg", "subtopic": "3.3 擴大貧富差距", "q": "在國際分工下，負責低技術工序的什麼國家所得利潤微薄，加劇國家間的收入差距？", "a": "發展中國家", "d": ["已發展國家", "工業發達國家", "金融中心國家"]},
+  {"sectionId": "3.3_neg", "subtopic": "3.3 擴大貧富差距", "q": "在同一國家內，「代工」生產令發展中國家商人收入顯著改善，但不少什麼群體卻受剝削，令收入差距擴大？", "a": "農民、工人", "d": ["官員、學者", "銀行家、律師", "跨國高管、股東"]},
+  {"sectionId": "3.3_pos", "subtopic": "3.3 促進企業發展", "q": "跨國企業有助各地本土企業怎樣做，從而獲取先進知識、技術和管理經驗，提升發展水平？", "a": "引進", "d": ["封鎖", "壟斷", "淘汰"]},
+  {"sectionId": "3.3_pos", "subtopic": "3.3 促進企業發展", "q": "跨國企業進入各地市場，加劇企業間的什麼，能促進本地企業研發與改良商品和服務？", "a": "競爭", "d": ["勾結", "壟斷", "依賴"]},
+  {"sectionId": "3.3_neg", "subtopic": "3.3 打擊中小企業", "q": "部分地方的中、小型企業難與跨國企業作什麼，或被迫結業？", "a": "競爭", "d": ["合作", "談判", "溝通"]},
+  {"sectionId": "3.3_neg", "subtopic": "3.3 打擊中小企業", "q": "中、小型企業難與跨國企業競爭，除了被迫結業外，還可能面臨什麼命運？", "a": "被跨國企業併購", "d": ["轉型為政府部門", "壟斷全球市場", "獲得無償補貼"]},
+  {"sectionId": "3.3_pos", "subtopic": "3.3 增加消費選擇", "q": "跨國企業為消費者提供更多商品和服務的什麼？", "a": "選擇", "d": ["限制", "稅項", "配額"]},
+  {"sectionId": "3.3_pos", "subtopic": "3.3 增加消費選擇", "q": "跨國企業致力創新、改善商品和服務素質，並維持相對怎樣的售價，令消費者得益？", "a": "低廉", "d": ["昂貴", "暴利", "浮動"]},
+  {"sectionId": "3.3_neg", "subtopic": "3.3 消費者利益受損", "q": "跨國企業可能對某地市場形成什麼局面，從而損害消費者利益？", "a": "壟斷", "d": ["開放", "自由競爭", "供過於求"]},
+  {"sectionId": "3.3_neg", "subtopic": "3.3 消費者利益受損", "q": "跨國企業壟斷某地市場後，可能會對商品和服務價格作出什麼行為？", "a": "操控", "d": ["大幅調低", "交由政府定價", "免費派發"]},
+  {"sectionId": "3.3_neg", "subtopic": "3.3 消費者利益受損", "q": "跨國企業壟斷市場後，或會減少投放資源研發新商品和服務，使消費者的選擇變得怎樣？", "a": "單一", "d": ["多元化", "個人化", "國際化"]},
+  {"sectionId": "3.3_pos", "subtopic": "3.3 提供就業機會", "q": "跨國企業在全球採購什麼，並設立生產線和銷售點等，為各地民眾創造了就業機會？", "a": "原材料", "d": ["奢侈品", "房地產", "政府債券"]},
+  {"sectionId": "3.3_pos", "subtopic": "3.3 提供就業機會", "q": "跨國企業除了在全球採購原材料外，還會在各地設立什麼設施，為民眾創造就業機會？", "a": "生產線和銷售點", "d": ["軍事基地和哨站", "法院和監獄", "領事館和海關"]},
+  {"sectionId": "3.3_neg", "subtopic": "3.3 生產者權益受損", "q": "一些跨國企業壓低什麼價格，令不少發展中國家農民和工人收入減少？", "a": "採購價", "d": ["零售價", "股票價", "關稅率"]},
+  {"sectionId": "3.3_neg", "subtopic": "3.3 生產者權益受損", "q": "發展中國家工廠為節省成本及取得跨國企業訂單，不惜削減工人的什麼待遇？", "a": "工資和福利", "d": ["工時和工作量", "稅款和罰金", "培訓和考核"]},
+  {"sectionId": "3.3_neg", "subtopic": "3.3 生產者權益受損", "q": "部分發展中國家的廠商未有遵守什麼法規，給予勞工合理待遇，令勞工權益受損？", "a": "勞工法例", "d": ["交通法例", "版權法例", "外匯法例"]},
+  {"sectionId": "3.3_neg", "subtopic": "3.3 環境問題", "q": "部分跨國企業過度消耗資源，對環境造成什麼影響，並破壞自然生態？", "a": "污染", "d": ["保育", "美化", "綠化"]},
+  {"sectionId": "3.3_neg", "subtopic": "3.3 環境問題", "q": "跨國企業助長什麼主義在各地盛行，影響民眾的消費習慣？", "a": "消費主義", "d": ["環保主義", "簡約主義", "保護主義"]},
+  {"sectionId": "3.3_neg", "subtopic": "3.3 環境問題", "q": "在消費主義盛行下，部分人因而養成什麼習慣，以及頻繁棄舊換新，造成資源浪費？", "a": "過度消費", "d": ["理性消費", "綠色消費", "延遲消費"]},
+  {"sectionId": "4.1 A", "subtopic": "4.1 A 職位轉移", "q": "跨國企業把生產和商業服務崗位或部門，從母公司什麼地方轉移至世界各地？", "a": "所在地", "d": ["免稅港", "殖民地", "貿易區"]},
+  {"sectionId": "4.1 A", "subtopic": "4.1 A 出差公幹", "q": "跨國企業或各地公私營機構會調派管理和技術人員前往海外分支機構，以作出什麼行動來處理當地的業務？", "a": "監督或支援", "d": ["壟斷或收購", "制裁或封鎖", "審判或執法"]},
+  {"sectionId": "4.1 A", "subtopic": "4.1 A 出差公幹", "q": "獲調派前往海外分支機構的管理和技術人員，除了監督或支援業務外，還會在當地進行什麼工作以推進合作項目？", "a": "洽談", "d": ["仲裁", "訴訟", "競投"]},
+  {"sectionId": "4.1 A", "subtopic": "4.1 A 勞務輸出", "q": "一些發展中國家根據國際間出現什麼情況，從而制定勞務輸出政策，鼓勵本地勞工赴海外工作？", "a": "用工荒", "d": ["金融危機", "貿易順差", "通貨膨脹"]},
+  {"sectionId": "4.1 A", "subtopic": "4.1 A 海外應徵", "q": "跨國企業、各地公私營機構等會制定什麼策略，以吸引專業人才？", "a": "全球招聘", "d": ["本地優先", "內部晉升", "終身僱用"]},
+  {"sectionId": "4.1 A", "subtopic": "4.1 A 海外應徵", "q": "機構以高薪、優厚的住屋福利等，吸引專業人才以什麼形式應聘和就職？", "a": "跨地域", "d": ["跨行業", "零工兼職", "義務性質"]},
+  {"sectionId": "4.1 A", "subtopic": "4.1 A 移民定居", "q": "不少國家推出什麼移民政策，以鼓勵各地人才移居當地並發展事業？", "a": "創業投資移民、技術移民", "d": ["政治庇護移民、難民收容", "家庭團聚移民、婚姻移民", "宗教朝聖移民、醫療移民"]},
+  {"sectionId": "4.1 B", "subtopic": "4.1 B 交通和通訊進步", "q": "什麼技術的發展，便利了勞動力跨地域流動？", "a": "交通運輸", "d": ["農業耕作", "能源開採", "醫療生物"]},
+  {"sectionId": "4.1 B", "subtopic": "4.1 B 交通和通訊進步", "q": "什麼技術和互聯網應用普及，有助人獲取各地招聘和就業資訊，提升跨地域就業意欲？", "a": "通訊科技", "d": ["航天科技", "納米科技", "軍事科技"]},
+  {"sectionId": "4.1 B", "subtopic": "4.1 B 交通和通訊進步", "q": "通訊科技和互聯網普及，促使一些企業採用什麼工作模式，推動勞工和職位的跨地域轉移？", "a": "遙距", "d": ["輪班", "密集", "封閉"]},
+  {"sectionId": "4.1 B", "subtopic": "4.1 B 國際分工發展", "q": "跨國企業在低成本、勞動力充足的什麼國家生產商品？", "a": "發展中國家", "d": ["已發展國家", "金融中心國家", "福利主義國家"]},
+  {"sectionId": "4.1 B", "subtopic": "4.1 B 國際分工發展", "q": "跨國企業在發展中國家生產，一旦當地失去什麼條件，便會遷走，帶動職位和勞動力轉移？", "a": "成本優勢", "d": ["政治特權", "文化特色", "軍事保護"]},
+  {"sectionId": "4.1 B", "subtopic": "4.1 B 國際分工發展", "q": "已發展國家集中發展高端製造業和第三產業，當地較高的什麼條件和發展機會，吸引世界各地相關人才前往工作？", "a": "薪酬", "d": ["稅率", "物價", "工時"]},
+  {"sectionId": "4.1 B", "subtopic": "4.1 B 勞力供求不平衡", "q": "已發展國家一些產業或工種出現大量空缺，當地政府因此對人手短缺行業的輸入外勞限制作出什麼調整？", "a": "放寬", "d": ["收緊", "取消", "凍結"]},
+  {"sectionId": "4.1 B", "subtopic": "4.1 B 勞力供求不平衡", "q": "某些國家或地區因勞動力過剩，出現就業不足、工資偏低、失業等問題，當地勞工會到外地做什麼？", "a": "尋找工作", "d": ["旅遊消費", "投資置業", "留學進修"]},
+  {"sectionId": "4.1 B", "subtopic": "4.1 B 勞力供求不平衡", "q": "勞動力過剩國家的政府亦鼓勵境外就業，以降低失業率和賺取什麼？", "a": "外匯", "d": ["關稅", "外債", "順差"]},
+  {"sectionId": "4.1 B", "subtopic": "4.1 B 人才競爭激烈", "q": "各國政府都設法透過移民政策、舉辦大型交流和招聘會、提供什麼優惠等，吸引海外人才，促進全球人才流動？", "a": "稅務", "d": ["關稅", "醫療", "養老"]},
+  {"sectionId": "4.1 C", "subtopic": "4.1 C 輸出地正面影響", "q": "勞工外流對勞動力輸出地而言，能直接舒緩當地的什麼社會問題？", "a": "失業", "d": ["老化", "通脹", "污染"]},
+  {"sectionId": "4.1 C", "subtopic": "4.1 C 輸出地正面影響", "q": "外流勞工會作出什麼經濟行為，將資金用於修建房屋、子女教育等方面？", "a": "匯款回鄉", "d": ["海外避稅", "跨國借貸", "慈善捐款"]},
+  {"sectionId": "4.1 C", "subtopic": "4.1 C 輸出地負面影響", "q": "高端職位、人才流向海外，會削弱輸出地社會經濟發展的什麼？", "a": "動力", "d": ["阻力", "成本", "風險"]},
+  {"sectionId": "4.1 C", "subtopic": "4.1 C 輸出地負面影響", "q": "人才外流意味著輸出地社會浪費了投放於哪兩個方面的資源？", "a": "教育及技術研發", "d": ["國防及軍事建設", "醫療及養老福利", "農業及基建工程"]},
+  {"sectionId": "4.1 C", "subtopic": "4.1 C 輸入地正面影響", "q": "外來勞工能為輸入地帶來各種有用的什麼，從而促進社會經濟的發展？", "a": "知識、技術和管理經驗", "d": ["原料、能源和天然資源", "資金、設備和專利商標", "法例、制度和政治文化"]},
+  {"sectionId": "4.1 C", "subtopic": "4.1 C 輸入地負面影響", "q": "外來勞工湧入輸入地，可能會與本地勞工爭奪什麼機會？", "a": "就業", "d": ["升學", "選舉", "參軍"]},
+  {"sectionId": "4.1 C", "subtopic": "4.1 C 輸入地負面影響", "q": "外來勞工容易在什麼方面，與輸入地的本地勞工產生矛盾？", "a": "生活方式", "d": ["政治立場", "學術觀點", "消費能力"]},
+  {"sectionId": "4.2 A", "subtopic": "4.2 A 資本全球流動", "q": "各地採取什麼措施對待資本進出的限制，使資本跨地域自由流動？", "a": "放寬", "d": ["收緊", "強化", "壟斷"]},
+  {"sectionId": "4.2 A", "subtopic": "4.2 A 資本全球流動", "q": "隨著各地放寬對資本進出的限制，資本跨地域自由流動的規模和速度出現什麼變化？", "a": "不斷提升", "d": ["逐漸萎縮", "保持停滯", "劇烈下跌"]},
+  {"sectionId": "4.2 A", "subtopic": "4.2 A 金融市場國際化", "q": "各地開放金融市場，企業可以跨地域進行什麼活動，而投資者可在不同金融中心買賣金融產品？", "a": "上市集資", "d": ["申請破產", "逃避稅項", "壟斷定價"]},
+  {"sectionId": "4.2 A", "subtopic": "4.2 A 金融機構國際化", "q": "各地放寬金融機構跨地域和跨業經營的限制，金融機構紛紛在海外增設什麼，並推出網上服務？", "a": "分支機構", "d": ["生產工廠", "物流倉庫", "研發實驗室"]},
+  {"sectionId": "4.2 A", "subtopic": "4.2 A 金融機構國際化", "q": "金融機構除了在海外增設分支機構外，亦會推出什麼服務以拓展業務？", "a": "網上服務", "d": ["代工服務", "物流服務", "政務服務"]},
+  {"sectionId": "4.2 A", "subtopic": "4.2 A 金融機構國際化", "q": "金融機構亦會藉什麼商業手段，或與其他機構建立合作關係，拓展經營份額？", "a": "合併、收購", "d": ["制裁、抵制", "分拆、清盤", "國有化、私有化"]},
+  {"sectionId": "4.2 A", "subtopic": "4.2 A 金融機構國際化", "q": "除了合併、收購外，金融機構亦會與其他機構建立什麼，以拓展經營份額？", "a": "合作關係", "d": ["敵對關係", "隸屬關係", "外交關係"]},
+  {"sectionId": "4.2 A", "subtopic": "4.2 A 貨幣國際化", "q": "各主要經濟體的貨幣在不同金融市場內流通和進行什麼活動？", "a": "自由兌換", "d": ["強制配給", "固定掛鈎", "限量發行"]},
+  {"sectionId": "4.2 A", "subtopic": "4.2 A 貨幣國際化", "q": "各主要經濟體的貨幣在國際市場上，會充當哪三種功能的貨幣？", "a": "計價、支付和儲備", "d": ["紀念、收藏和拍賣", "贈與、救濟和補貼", "抵押、罰沒和賠償"]},
+  {"sectionId": "4.2 A", "subtopic": "4.2 A 金融監管全球化", "q": "各國共同成立全球性金融協調和監管組織，並訂立什麼，保障全球金融活動在認可的規則下順利運行？", "a": "監管協議", "d": ["軍事同盟", "關稅壁壘", "貿易配額"]},
+  {"sectionId": "4.2 B", "subtopic": "4.2 B 金融自由化", "q": "美國和英國率先放寬什麼措施，其他國家紛紛跟隨，推動了金融自由化？", "a": "金融管制", "d": ["邊境管制", "環保管制", "勞工管制"]},
+  {"sectionId": "4.2 B", "subtopic": "4.2 B 金融自由化", "q": "1970年代末至1980年代初，推動金融、貿易自由化的什麼機構相繼成立，促進了資本全球流動？", "a": "國際經濟組織", "d": ["跨國慈善機構", "區域軍事同盟", "國際司法法院"]},
+  {"sectionId": "4.2 B", "subtopic": "4.2 B 跨國企業發展", "q": "跨國企業湧現，不斷擴大國際投資、什麼活動和貿易規模？", "a": "生產", "d": ["徵稅", "立法", "救濟"]},
+  {"sectionId": "4.2 B", "subtopic": "4.2 B 跨國企業發展", "q": "金融機構建立什麼網絡，為跨國企業提供資金融通等服務？", "a": "跨地域經營網絡", "d": ["全球物流網絡", "跨國情報網絡", "區域供電網絡"]},
+  {"sectionId": "4.2 B", "subtopic": "4.2 B 跨國企業發展", "q": "金融機構為跨國企業提供資金融通、什麼服務及貨幣買賣等金融服務？", "a": "貿易結算", "d": ["原料採購", "產品代工", "品牌宣傳"]},
+  {"sectionId": "4.2 B", "subtopic": "4.2 B 科技進步及應用", "q": "資訊及通訊科技將各地金融市場互聯起來，形成什麼市場？", "a": "全球金融市場", "d": ["本地批發市場", "傳統農貿市場", "單一商品市場"]},
+  {"sectionId": "4.2 B", "subtopic": "4.2 B 科技進步及應用", "q": "各地金融機構利用什麼工具，向全球即時更新金融產品的買賣情況和價格變動？", "a": "互聯網", "d": ["印刷報紙", "無線電報", "實體信件"]},
+  {"sectionId": "4.2 B", "subtopic": "4.2 B 科技進步及應用", "q": "金融機構利用互聯網更新資訊，並進行跨地域的什麼活動？", "a": "金融交易", "d": ["實物交割", "易貨貿易", "勞務派遣"]},
+  {"sectionId": "4.2 B", "subtopic": "4.2 B 金融機構創新", "q": "金融機構不斷改革金融業務、研發什麼，以供全球投資者選擇？", "a": "金融產品", "d": ["工業產品", "農副產品", "電子硬件"]},
+  {"sectionId": "4.2 B", "subtopic": "4.2 B 金融機構創新", "q": "金融機構創新能促進什麼要素在國際間頻繁流動及全球金融市場持續發展？", "a": "資本", "d": ["勞工", "原料", "土地"]},
+  {"sectionId": "4.2 C", "subtopic": "4.2 C 推動財富增長", "q": "金融交易可怎樣地進行，為市場參與者提供更多可創造財富的投資機會？", "a": "不分晝夜", "d": ["分時分段", "定期定額", "封閉獨立"]},
+  {"sectionId": "4.2 C", "subtopic": "4.2 C 促進經貿發展", "q": "什麼主體能在國際金融市場集資，繼而用於拓展業務，促進各地經貿發展？", "a": "跨國企業", "d": ["慈善團體", "地方工會", "家庭作坊"]},
+  {"sectionId": "4.2 C", "subtopic": "4.2 C 有利金融業成長", "q": "已發展地區的金融體系和金融業制度相對較成熟，可供其他地區作什麼用途，以完善金融制度？", "a": "借鑑", "d": ["抄襲", "壟斷", "廢除"]},
+  {"sectionId": "4.2 C", "subtopic": "4.2 C 有利金融業成長", "q": "金融機構間的競爭，促使它們提高什麼及進行金融創新，以爭取市場份額？", "a": "管理水平", "d": ["借貸利率", "手續費用", "准入門檻"]},
+  {"sectionId": "4.2 C", "subtopic": "4.2 C 有利金融業成長", "q": "金融機構間的競爭，除了促使它們提高管理水平外，還會促使它們進行什麼，以爭取市場份額？", "a": "金融創新", "d": ["價格壟斷", "惡性裁員", "政治遊說"]},
+  {"sectionId": "4.2 C", "subtopic": "4.2 C 金融風險湧現", "q": "若國際資本一窩蜂對某地作出什麼行為，會影響當地金融市場穩定？", "a": "湧入、撤離", "d": ["儲蓄、捐贈", "凍結、銷毀", "借貸、擔保"]},
+  {"sectionId": "4.2 C", "subtopic": "4.2 C 金融風險湧現", "q": "某地金融體系出現問題，可能蔓延至其他地區，演變為區域性、全球性的什麼危機？", "a": "金融危機", "d": ["糧食危機", "能源危機", "生態危機"]},
+  {"sectionId": "4.2 C", "subtopic": "4.2 C 增加監管難度", "q": "全球金融市場的資本流動量具有什麼特徵，令各地政府和國際機構難以監管？", "a": "龐大、快速", "d": ["微小、緩慢", "固定、透明", "單一、封閉"]},
+  {"sectionId": "4.2 C", "subtopic": "4.2 C 增加監管難度", "q": "金融監管準則往往跟不上什麼發展，容易出現金融問題？", "a": "金融創新", "d": ["人口增長", "農業收成", "氣候變化"]},
+  {"sectionId": "4.2 C", "subtopic": "4.2 C 增加監管難度", "q": "金融市場近來興起用什麼進行交易，但國際仍未制定監管措施？", "a": "虛擬貨幣", "d": ["貴金屬金幣", "政府公債", "外匯支票"]},
+  {"sectionId": "4.2 C", "subtopic": "4.2 C 削弱經濟主權", "q": "各國在制定、執行經濟政策時，往往受什麼機構及其他地方的經濟因素影響？", "a": "國際經濟組織", "d": ["國際人權組織", "跨國環保團體", "地方宗教領袖"]},
+  {"sectionId": "4.2 C", "subtopic": "4.2 C 削弱經濟主權", "q": "國際共同應對金融問題時，往往由強勢的發達國家作出什麼行為，削弱他國經濟主權？", "a": "主導政策", "d": ["承擔債務", "無償援助", "放棄投票"]},
+  {"sectionId": "5.1 & 5.2", "subtopic": "5.1 甚麼是新經濟？", "q": "新經濟是相對於「舊經濟」（或稱什麼經濟）而言的新商業模式？", "a": "傳統經濟", "d": ["計劃經濟", "泡沫經濟", "地下經濟"]},
+  {"sectionId": "5.1 & 5.2", "subtopic": "5.1 甚麼是新經濟？", "q": "新經濟以什麼為代表，以滿足消費者的需求為核心？", "a": "互聯網、知識型經濟、高新技術", "d": ["重工業、勞力型經濟、傳統技術", "農業、自給自足經濟、手工技術", "金融業、炒賣型經濟、借貸技術"]},
+  {"sectionId": "5.1 & 5.2", "subtopic": "5.1 甚麼是新經濟？", "q": "新經濟是由什麼科技革命帶動？", "a": "資訊", "d": ["農業", "能源", "蒸汽"]},
+  {"sectionId": "5.1 & 5.2", "subtopic": "5.1 甚麼是新經濟？", "q": "新經濟在資訊科技革命帶動下，以什麼為主的經濟？", "a": "高科技、創新產業", "d": ["低技術、傳統產業", "高耗能、重工產業", "密集勞力、加工產業"]},
+  {"sectionId": "5.1 & 5.2", "subtopic": "5.2 資訊科技發展", "q": "資訊科技進步，企業和個人廣泛使用什麼和電子通訊等技術，促進相關行業發展？", "a": "互聯網", "d": ["印刷術", "無線電報", "固網電話"]},
+  {"sectionId": "5.1 & 5.2", "subtopic": "5.2 經濟全球化", "q": "在經濟全球化下，各地採取什麼措施，令跨地域經貿發展頻繁，也加劇了國際競爭？", "a": "開放市場", "d": ["封鎖邊境", "提高關稅", "限制外資"]},
+  {"sectionId": "5.1 & 5.2", "subtopic": "5.2 經濟全球化", "q": "面對國際競爭，各行業利用什麼來拓展跨地域業務或提升競爭力？", "a": "高新科技", "d": ["廉價勞工", "天然資源", "政府補貼"]},
+  {"sectionId": "5.1 & 5.2", "subtopic": "5.2 傳統產業升級", "q": "薪酬、運輸、倉存等什麼上升，促使企業尋求轉型？", "a": "成本", "d": ["利潤", "補貼", "配額"]},
+  {"sectionId": "5.1 & 5.2", "subtopic": "5.2 傳統產業升級", "q": "面對成本上升，促使企業利用什麼來節省成本，增加效益？", "a": "新科技", "d": ["裁員減薪", "偷工減料", "壟斷價格"]},
+  {"sectionId": "5.1 & 5.2", "subtopic": "5.2 勞動及消費市場轉變", "q": "在勞動及消費市場轉變下，人們崇尚怎樣的生活態度？", "a": "生活自主", "d": ["集體服從", "傳統保守", "刻苦耐勞"]},
+  {"sectionId": "5.1 & 5.2", "subtopic": "5.2 勞動及消費市場轉變", "q": "消費者追求怎樣的商品和服務，令網絡經濟、電子商貿等應運而生？", "a": "獨特", "d": ["劃一", "廉價", "大眾化"]},
+  {"sectionId": "5.3", "subtopic": "5.3 人力資源", "q": "新經濟是哪兩種性質的經濟？", "a": "知識經濟、創新經濟", "d": ["勞力經濟、傳統經濟", "資源經濟、工業經濟", "農業經濟、計劃經濟"]},
+  {"sectionId": "5.3", "subtopic": "5.3 人力資源", "q": "新經濟的首要生產要素是什麼？", "a": "人力資源", "d": ["土地資源", "礦產資源", "金融資本"]},
+  {"sectionId": "5.3", "subtopic": "5.3 人力資源", "q": "新經濟的核心驅動力來自什麼？", "a": "創新", "d": ["模仿", "壟斷", "補貼"]},
+  {"sectionId": "5.3", "subtopic": "5.3 新科技", "q": "新經濟高度依賴哪三種新基礎設施？", "a": "互聯網、大數據中心、物聯網", "d": ["高速公路、貨櫃碼頭、鐵路網", "發電廠、水庫、輸電網", "銀行大廈、交易所、金庫"]},
+  {"sectionId": "5.3", "subtopic": "5.3 新科技", "q": "各種新基礎設施的開發和應用，催生了什麼、新業態和商業模式？", "a": "新產業", "d": ["舊產業", "傳統農業", "夕陽工業"]},
+  {"sectionId": "5.3", "subtopic": "5.3 新科技", "q": "傳統基礎設施應用了什麼技術，有助提高運作效率？", "a": "智能技術", "d": ["手工技術", "機械化技術", "蒸汽動力技術"]},
+  {"sectionId": "5.3", "subtopic": "5.3 新產業", "q": "「新產業」指應用什麼而形成一定規模的新型經濟活動？", "a": "新科技成果、新興技術", "d": ["傳統工藝、密集勞力", "天然資源、初級原料", "政府貸款、外資併購"]},
+  {"sectionId": "5.3", "subtopic": "5.3 新產業", "q": "「新產業」包括採用現代資訊技術改良什麼產業而形成的新產業？", "a": "傳統", "d": ["高端", "虛擬", "跨國"]},
+  {"sectionId": "5.3", "subtopic": "5.3 新產業", "q": "除了改良傳統產業外，新技術應用怎樣發展也能形成新產業？", "a": "產業化", "d": ["國有化", "概念化", "公益化"]},
+  {"sectionId": "5.3", "subtopic": "5.3 新業態", "q": "越來越多什麼對象追求產品和服務多元化和具個性，促使企業衍生出新環節和活動？", "a": "客戶", "d": ["股東", "官員", "供應商"]},
+  {"sectionId": "5.3", "subtopic": "5.3 新業態", "q": "新業態在商業流程、什麼模式、什麼形態等方面作出突破，如發展出線上教育、線上醫療？", "a": "服務、產品", "d": ["徵稅、立法", "借貸、還款", "招聘、考核"]},
+  {"sectionId": "5.3", "subtopic": "5.3 新商業模式", "q": "為實現哪兩個目標，企業整合各種經營要素，形成高效率和具競爭力的新商業運行模式？", "a": "用戶價值、企業持續盈利", "d": ["市場壟斷、短期暴利", "逃避監管、削減成本", "政府補貼、規模擴張"]},
+  {"sectionId": "5.3", "subtopic": "5.3 新商業模式", "q": "如企業把互聯網與產業融合，為客戶提供怎樣的服務？", "a": "一站式", "d": ["分段式", "單一化", "自助式"]},
+  {"sectionId": "5.4 A", "subtopic": "5.4 A 消費者選擇增加", "q": "商品、服務的數量和種類增加，甚至可以為消費者怎樣製作？", "a": "度身打造", "d": ["統一配給", "強制捆綁", "隨機派發"]},
+  {"sectionId": "5.4 A", "subtopic": "5.4 A 消費者選擇增加", "q": "消費者可經什麼渠道獲取產品資訊、用家評價、折扣優惠等，然後作消費選擇？", "a": "互聯網", "d": ["實體報章", "電視廣播", "街頭傳單"]},
+  {"sectionId": "5.4 A", "subtopic": "5.4 A 刺激消費意欲", "q": "企業用什麼渠道推廣，以及運用什麼技術掌握市場和用戶資訊，推送廣告及優惠？", "a": "互聯網、大數據", "d": ["實體店、問卷調查", "電話推銷、人工統計", "傳統郵寄、抽樣訪問"]},
+  {"sectionId": "5.4 A", "subtopic": "5.4 A 消費方式轉變", "q": "市場上出現越來越多什麼平台，同時傳統零售店也開設什麼？", "a": "網上消費、網店", "d": ["批發拍賣、工廠店", "二手交換、地攤", "跨國貿易、免稅店"]},
+  {"sectionId": "5.4 A", "subtopic": "5.4 A 消費方式轉變", "q": "網上消費打破了什麼的限制，消費者可隨時隨地訂購世界各地的商品或服務？", "a": "時間和空間", "d": ["法律和道德", "貨幣和匯率", "語言和文化"]},
+  {"sectionId": "5.4 A", "subtopic": "5.4 A 支付方式多元化", "q": "銀行、科創公司開發出多種什麼貨幣及交易方式，方便大眾消費交易？", "a": "電子貨幣、虛擬貨幣及電子", "d": ["貴金屬貨幣、紙幣及現金", "外匯支票、債券及櫃枱", "實物代幣、糧票及配給"]},
+  {"sectionId": "5.4 A", "subtopic": "5.4 A 產品和服務升級", "q": "運用什麼能降低生產和服務成本，並使產品及服務升級？", "a": "高新科技", "d": ["廉價原料", "外判勞工", "規模壟斷"]},
+  {"sectionId": "5.4 A", "subtopic": "5.4 A 產品和服務升級", "q": "越來越多人傾向選擇客制化的商品及服務，以突顯什麼？", "a": "個人風格", "d": ["社會地位", "財富規模", "群體認同"]},
+  {"sectionId": "5.4 A", "subtopic": "5.4 A 企業與消費者互動", "q": "企業運用資訊科技，可以更輕鬆、精準地獲取消費者的什麼？", "a": "意見", "d": ["存款", "密碼", "資產"]},
+  {"sectionId": "5.4 A", "subtopic": "5.4 A 企業與消費者互動", "q": "企業透過遠程監測、在線諮詢等電子系統，可為用戶提供技術支援和什麼服務？", "a": "售後服務", "d": ["代工服務", "物流服務", "信貸服務"]},
+  {"sectionId": "5.4 A", "subtopic": "5.4 A 消費權益問題", "q": "現行什麼制度不足以保障網上交易雙方的權益，消費者往往較難退換和索償？", "a": "法律", "d": ["稅務", "銀行", "保險"]},
+  {"sectionId": "5.4 A", "subtopic": "5.4 A 消費權益問題", "q": "部分新經濟企業或生產者未獲什麼程序，其產品或服務可能不符合什麼，令消費者利益受損？", "a": "審批、法例標準", "d": ["上市、市場預期", "贊助、環保要求", "併購、國際慣例"]},
+  {"sectionId": "5.4 B", "subtopic": "5.4 B 新舊職位的消長", "q": "與新經濟相關的職位，如技術人員、創新產品設計師等職位出現什麼變化？", "a": "增加", "d": ["減少", "消失", "凍結"]},
+  {"sectionId": "5.4 B", "subtopic": "5.4 B 新舊職位的消長", "q": "新業態、新商業模式促使什麼司機、網紅等新職位出現？", "a": "網約車", "d": ["傳統的士", "跨境貨車", "公共巴士"]},
+  {"sectionId": "5.4 B", "subtopic": "5.4 B 新舊職位的消長", "q": "一些什麼類型的職位可能被機械人、什麼技術等取代？", "a": "低技術、人工智能", "d": ["高技術、生物科技", "管理層、大數據", "創意類、雲端計算"]},
+  {"sectionId": "5.4 B", "subtopic": "5.4 B 新舊職位的消長", "q": "低技術職位被取代，可能造成什麼失業和什麼配對失衡問題？", "a": "結構性、人力資源", "d": ["周期性、金融資本", "摩擦性、自然資源", "季節性、商品市場"]},
+  {"sectionId": "5.4 B", "subtopic": "5.4 B 就業形式多樣化", "q": "很多人成為自由職業者，通過互聯網承接短期工作，形成什麼經濟模式？", "a": "零工經濟", "d": ["共享經濟", "網紅經濟", "訂閱經濟"]},
+  {"sectionId": "5.4 B", "subtopic": "5.4 B 就業形式多樣化", "q": "一些自由工作者身兼數職，同時開展多重事業，被稱為什麼群體？", "a": "斜棟族", "d": ["月光族", "銀髮族", "上班族"]},
+  {"sectionId": "5.4 B", "subtopic": "5.4 B 計薪方式多樣化", "q": "什麼經濟的計薪方法多按項目的難度、工作量等釐定報酬？", "a": "零工經濟", "d": ["傳統經濟", "計劃經濟", "國有經濟"]},
+  {"sectionId": "5.4 B", "subtopic": "5.4 B 計薪方式多樣化", "q": "網絡平台多採取什麼的形式，如網約車司機與網絡平台管理者按比例分配利潤？", "a": "合作分成", "d": ["固定月薪", "買斷產權", "保底津貼"]},
+  {"sectionId": "5.4 B", "subtopic": "5.4 B 計薪方式多樣化", "q": "資訊和金融科技進步衍生新支薪方法，如以什麼計算廣告收益；網絡直播主收取網民發送的什麼？", "a": "直播點擊率、電子紅包或虛擬禮物", "d": ["工作時數、實體支票或現金", "學歷年資、公司股票或債券", "銷售件數、消費券或折扣碼"]},
+  {"sectionId": "5.4 B", "subtopic": "5.4 B 勞工權益問題", "q": "一些經互聯網配對的什麼工作也可能存有法律規管的漏洞，如勞資沒有簽訂正規合同，容易引致糾紛？", "a": "外判工作", "d": ["公務員工作", "長期全職工作", "跨國管理工作"]},
+  {"sectionId": "5.5", "subtopic": "5.5 促進香港經濟發展", "q": "企業運用什麼發展業務，推動傳統甚至新行業發展，使香港經濟保持繁榮？", "a": "高新科技", "d": ["土地地產", "轉口貿易", "廉價勞工"]},
+  {"sectionId": "5.5", "subtopic": "5.5 促進香港經濟發展", "q": "如大型連鎖店會同時開設實體店和什麼，並帶動物流業、金融科技等發展？", "a": "網店", "d": ["工廠", "倉庫", "分行"]},
+  {"sectionId": "5.5", "subtopic": "5.5 鞏固香港國際金融中心地位", "q": "香港交易所對生物科技企業在港上市的規定作出什麼調整，吸引了很多醫療健康、生物科技公司來港上市？", "a": "放寬", "d": ["收緊", "取消", "凍結"]},
+  {"sectionId": "5.5", "subtopic": "5.5 鞏固香港國際金融中心地位", "q": "大量生物科技公司來港上市，令香港成為亞洲最大、全球第二大的什麼中心？", "a": "生物科技融資", "d": ["傳統藥物生產", "醫療器械批發", "基因工程研發"]},
+  {"sectionId": "5.5", "subtopic": "5.5 推動產業升級轉型", "q": "香港政府把哪三個範疇和金融科技列為四大發展範疇，有助香港產業趨向更多元化發展？", "a": "生物科技、人工智能、智慧城市", "d": ["旅遊零售、地產建築、物流航運", "傳統工業、漁農畜牧、文化創意", "教育培訓、醫療護理、社會福利"]},
+  {"sectionId": "5.5", "subtopic": "5.5 推動產業升級轉型", "q": "高新科技亦逐步應用到哪兩個行業及餐飲等行業，推動原有的經濟產業升級、轉型？", "a": "醫療、教育", "d": ["採礦、冶金", "紡織、製衣", "造船、重工"]},
+  {"sectionId": "5.5", "subtopic": "5.5 推動科研發展", "q": "為發展新經濟，港府建立了哪兩個園區及五所研發中心？", "a": "科學園、數碼港", "d": ["工業邨、物流園", "金融城、自貿區", "文創園、生態園"]},
+  {"sectionId": "5.5", "subtopic": "5.5 推動科研發展", "q": "港府除了建立園區及研發中心外，並設立了哪兩個基金，有利創科企業成長，提升香港科研水平？", "a": "創新及科技基金、創科創投基金", "d": ["關愛基金、外匯基金", "強積金、防疫抗疫基金", "電影發展基金、盛事基金"]},
+  {"sectionId": "5.5", "subtopic": "5.5 改變市民生活模式", "q": "高新科技漸漸應用到什麼的各個層面，如網購、電子支付、通訊等？", "a": "生活", "d": ["軍事", "外交", "司法"]},
+  {"sectionId": "5.5", "subtopic": "5.5 改變市民生活模式", "q": "近年師生不時以什麼代替面授課堂；部分員工實行什麼工作模式？", "a": "網上學習、遙距工作", "d": ["自修溫習、輪班工作", "戶外考察、外判工作", "補習進修、兼職工作"]},
+  {"sectionId": "5.5", "subtopic": "5.5 維持國際城市地位", "q": "互聯網經濟蓬勃，有利香港企業拓展什麼貿易？", "a": "跨境", "d": ["本地", "易貨", "配額"]},
+  {"sectionId": "5.5", "subtopic": "5.5 維持國際城市地位", "q": "香港新經濟行業已發展起來，吸引什麼機構和什麼群體來港？", "a": "海外企業、專業人才", "d": ["傳統工廠、低技術勞工", "慈善團體、政治難民", "農業合作社、外籍遊客"]},
+  {"sectionId": "5.5", "subtopic": "5.5 面對挑戰和困難", "q": "高新科技行業具有什麼特徵，可能令投資者虧損？", "a": "投資大、風險較高", "d": ["回報慢、利潤微薄", "門檻低、競爭激烈", "周期短、產能過剩"]},
+  {"sectionId": "5.5", "subtopic": "5.5 面對挑戰和困難", "q": "新商業模式對傳統行業造成什麼影響，例如的士業界認為網約車平台損害他們的利益？", "a": "衝擊", "d": ["扶持", "壟斷", "併購"]},
+  {"sectionId": "5.5", "subtopic": "5.5 面對挑戰和困難", "q": "部分新經濟活動引起什麼規管問題，如網購糾紛、網絡騙案等？", "a": "法律", "d": ["道德", "環保", "稅務"]},
+  {"sectionId": "5.6", "subtopic": "5.6 A 推動產業升級轉型", "q": "發展什麼模式，令互聯網與各行業跨界聯繫、深度融合，締造出新的生產、什麼、銷售和服務形態？", "a": "「互聯網+」、管理", "d": ["「工業4.0」、代工", "「人工智能+」、壟斷", "「大數據+」、配給"]},
+  {"sectionId": "5.6", "subtopic": "5.6 A 推動產業升級轉型", "q": "催生新產業方面，出現了一些什麼密集、成長潛力大、能帶動社會經濟長遠發展的新產業？", "a": "知識技術", "d": ["勞動力", "天然資源", "傳統資本"]},
+  {"sectionId": "5.6", "subtopic": "5.6 A 推動產業升級轉型", "q": "新一代信息技術、生物技術、新能源等更被政府列為什麼產業？", "a": "戰略性新興產業", "d": ["傳統支柱產業", "基礎民生產業", "夕陽淘汰產業"]},
+  {"sectionId": "5.6", "subtopic": "5.6 B 減緩經濟下行壓力", "q": "發展新經濟成為了什麼的新動能，有助減緩經濟下行的壓力？", "a": "經濟增長", "d": ["人口增長", "通貨膨脹", "貿易順差"]},
+  {"sectionId": "5.6", "subtopic": "5.6 B 減緩經濟下行壓力", "q": "新經濟減緩經濟下行壓力，並支持經濟朝向什麼方向發展？", "a": "高質量", "d": ["高耗能", "高速度", "高負債"]},
+  {"sectionId": "5.6", "subtopic": "5.6 C 拓寬國際市場", "q": "中國品牌應用高新科技提升素質，增加在什麼市場的競爭力？", "a": "國際市場", "d": ["本地市場", "農村市場", "批發市場"]},
+  {"sectionId": "5.6", "subtopic": "5.6 C 拓寬國際市場", "q": "中國品牌藉什麼（如加入網購平台）連繫國際市場，擴大銷售規模？", "a": "新業態", "d": ["政府補貼", "價格戰", "關稅優惠"]},
+  {"sectionId": "5.6", "subtopic": "5.6 D 提升科技水平", "q": "政府和企業增加什麼投入，並引入什麼群體，又與其他國家或地區交流合作，改進5G、人工智能等技術？", "a": "科研經費、海外人才", "d": ["軍費開支、外籍勞工", "行政費用、跨國高管", "基建貸款、外資股東"]},
+  {"sectionId": "5.6", "subtopic": "5.6 D 提升科技水平", "q": "中國多項高新技術處於世界前列，有助提高國家競爭力和什麼？", "a": "綜合國力", "d": ["軍事霸權", "領土面積", "人口總量"]},
+  {"sectionId": "5.6", "subtopic": "5.6 E 改變民眾生活", "q": "微信支付、支付寶等什麼形式日漸普及，方便民眾消費交易？", "a": "電子支付", "d": ["信用支票", "虛擬貨幣", "實物交換"]},
+  {"sectionId": "5.6", "subtopic": "5.6 E 改變民眾生活", "q": "醫院開發可供掛號、問診等的什麼工具，緩解了民眾的什麼問題？", "a": "應用程式、「就醫難」", "d": ["醫療設備、「藥費貴」", "保險計劃、「養老難」", "社交平台、「資訊少」"]},
+  {"sectionId": "5.6", "subtopic": "5.6 E 改變民眾生活", "q": "教育機構推出什麼，令大眾可隨時隨地充實自身的知識技能？", "a": "線上課程", "d": ["免費教材", "海外留學", "職業培訓"]},
+  {"sectionId": "5.6", "subtopic": "5.6 E 改變民眾生活", "q": "新行業冒起，提供大量什麼，促使中國什麼結構出現變化？", "a": "職位、就業結構", "d": ["補貼、人口結構", "資金、城鄉結構", "產品、消費結構"]},
+  {"sectionId": "5.6", "subtopic": "5.6 F 有利可持續發展", "q": "共享房屋、共享出行、共享生產等平台有效將資源集約共享，提高什麼，並減少什麼？", "a": "使用效率、能源消耗", "d": ["企業利潤、勞工成本", "市場價格、稅收負擔", "生產速度、原料進口"]},
+  {"sectionId": "5.6", "subtopic": "5.6 F 有利可持續發展", "q": "企業運用大數據分析，改良產品設計及精準控制什麼，避免供應過剩，浪費資源？", "a": "產量", "d": ["售價", "品質", "工時"]},
+  {"sectionId": "5.6", "subtopic": "5.6 G 出現監管困難", "q": "現行什麼和什麼制度未能配合新經濟（如在線教育）的發展，難以保障消費者權益？", "a": "監管政策、法規", "d": ["稅收制度、財政", "金融體系、信貸", "教育制度、考核"]},
+  {"sectionId": "5.6", "subtopic": "5.6 H 遇到技術挑戰", "q": "中國在一些什麼（如晶片、工業機械人）方面的研發和儲備不足，仍須依賴國外引進？", "a": "核心技術", "d": ["基礎原料", "傳統工藝", "行銷模式"]},
+  {"sectionId": "5.6", "subtopic": "5.6 I 導致地區發展差距", "q": "哪個地區（包括京津冀、長三角、哪個灣區）具良好的營商環境、基礎配套及產業基礎？", "a": "東部、粵港澳大灣區", "d": ["西部、北部灣經濟區", "中部、環渤海經濟區", "東北、海峽西岸經濟區"]},
+  {"sectionId": "5.6", "subtopic": "5.6 I 導致地區發展差距", "q": "東部地區匯聚了較多新經濟企業和什麼企業，與其他地區的發展形成差距？", "a": "「獨角獸」", "d": ["「國有壟斷」", "「傳統代工」", "「跨國合資」"]},
+  {"sectionId": "5.1 & 5.2", "subtopic": "核心內容解構：經濟全球化", "q": "經濟全球化定義：什麼經濟活動日趨頻繁，各種經濟要素在什麼範圍流動，致使各經濟體相互依存？", "a": "跨地域、全球", "d": ["本土化、區域", "單邊性、國內", "封閉式、雙邊"]},
+  {"sectionId": "5.1 & 5.2", "subtopic": "核心內容解構：經濟全球化", "q": "經濟全球化的五大特徵包括：哪四個市場一體化，以及什麼生產鏈形成？", "a": "原料、商品、勞動、金融、全球", "d": ["土地、技術、資訊、貨幣、區域", "農業、工業、服務、科技、本土", "批發、零售、信貸、投資、跨國"]},
+  {"sectionId": "5.4 A", "subtopic": "核心內容解構：新經濟對個人影響", "q": "新經濟在個人消費方面帶來哪四項主要影響？", "a": "增加選擇、線上消費增加、企業與消費者互動增加、消費權益問題", "d": ["減少選擇、實體消費壟斷、企業單向推銷、物價全面下跌", "統一標準、現金交易普及、消除資訊不對稱、保障零風險", "限制配額、跨國代購盛行、取消售後服務、免除消費稅"]},
+  {"sectionId": "5.4 A", "subtopic": "核心內容解構：新經濟對個人影響", "q": "新經濟在個人就業方面帶來哪四項主要影響？", "a": "新舊職位消長、就業形式更多元化、計薪方式多樣化、勞工權益問題", "d": ["傳統職位激增、全面終身僱用、統一固定月薪、消除失業問題", "淘汰所有勞工、強制辦公室工作、按年資計薪、工會權力膨脹", "外勞全面取代、政府分配工作、取消績效獎金、法定保障完善"]},
+  {"sectionId": "5.5", "subtopic": "核心內容解構：新經濟對香港影響", "q": "新經濟對香港發展帶來的挑戰是面對什麼風險和什麼困難？", "a": "虧損風險、監管困難", "d": ["通脹風險、融資困難", "外匯風險、招聘困難", "破產風險、出口困難"]},
+  {"sectionId": "ch二_1 & 1.1", "subtopic": "1 第四次工業革命主要動力", "q": "推動第四次工業革命（智能化時代）的三大主要動力包括大數據、什麼智能及什麼儲存？", "a": "人工智能、雲端儲存", "d": ["機械智能、實體儲存", "生物智能、光碟儲存", "傳統智能、磁帶儲存"]},
+  {"sectionId": "ch二_1 & 1.1", "subtopic": "1.1 人工智能的定義", "q": "人工智能是由誰製造出來，能夠模擬什麼過程和模仿人類能力或行為的機器？", "a": "人類、人類思維過程", "d": ["電腦、自然演化過程", "機械、物理運動過程", "網絡、化學反應過程"]},
+  {"sectionId": "ch二_1 & 1.1", "subtopic": "1.1 人工智能的發展", "q": "人工智能發展的「符號邏輯」階段，是把人類什麼思考的方式輸入電腦？", "a": "邏輯", "d": ["感性", "直覺", "幻想"]},
+  {"sectionId": "ch二_1 & 1.1", "subtopic": "1.1 人工智能的發展", "q": "人工智能發展的「專家系統」階段，是把什麼知識和判斷原則輸入電腦？", "a": "專業", "d": ["常識", "歷史", "娛樂"]},
+  {"sectionId": "ch二_1 & 1.1", "subtopic": "1.1 人工智能的發展", "q": "現最受重視的技術是什麼學習，即電腦透過閱讀大量資料自我學習？", "a": "機器學習", "d": ["人工學習", "視覺學習", "記憶學習"]},
+  {"sectionId": "ch二_1 & 1.1", "subtopic": "1.1 人工智能的能力分類", "q": "「自動控制」是指因應傳感器測到的數據，按什麼自動調節和運作？", "a": "預設指令", "d": ["隨機應變", "人類情緒", "天氣變化"]},
+  {"sectionId": "ch二_1 & 1.1", "subtopic": "1.1 人工智能的能力分類", "q": "「探索推論」是指透過數學運算表現出像人類一樣的什麼能力，可協助人類解決問題？", "a": "邏輯推論能力", "d": ["藝術創作能力", "情感共鳴能力", "體力勞動能力"]},
+  {"sectionId": "ch二_1 & 1.1", "subtopic": "1.1 人工智能的能力分類", "q": "「機器學習」能透過什麼方式進行訓練，歸納出知識？", "a": "閱讀大量資料", "d": ["背誦單一指令", "模仿動物行為", "進行零件組裝"]},
+  {"sectionId": "ch二_1 & 1.1", "subtopic": "1.1 人工智能的應用", "q": "人臉識別可應用於什麼系統（身分認證、追蹤可疑人物）、什麼控制、尋找什麼及收集什麼行為資料？", "a": "保安、人流、失蹤人口、消費者", "d": ["金融、車流、逃稅商人、投資者", "醫療、物流、外籍勞工、管理者", "教育、資金、跨境遊客、生產者"]},
+  {"sectionId": "ch二_1 & 1.1", "subtopic": "1.1 人工智能的應用", "q": "語音助理廣泛用於智能手機，協助人做什麼、播放音樂、什麼電器等？", "a": "查詢資料、開關", "d": ["編寫程式、維修", "批改作業、製造", "診斷疾病、拆卸"]},
+  {"sectionId": "ch二_1 & 1.1", "subtopic": "1.1 人工智能的應用", "q": "自動駕駛系統讓汽車在沒有誰操控下行駛（目前技術只是有條件地自動駕駛）？", "a": "人類", "d": ["電腦", "雷達", "衛星"]},
+  {"sectionId": "ch二_1 & 1.1", "subtopic": "1.1 人工智能的技術限制", "q": "現有的人工智能只是「弱人工智能」，缺乏自行做什麼、規劃、解決什麼及應付什麼工作等能力？", "a": "解釋現象、難題、多項", "d": ["收集數據、簡單、單一", "執行指令、常規、重複", "儲存檔案、計算、特定"]},
+  {"sectionId": "ch二_1 & 1.1", "subtopic": "1.1 人工智能的技術限制", "q": "能勝任所有工作的「強人工智能」目前仍處於什麼階段？", "a": "構想階段", "d": ["普及階段", "成熟階段", "淘汰階段"]},
+  {"sectionId": "ch二_1.2", "subtopic": "1.2 大數據的定義", "q": "大數據是指來自什麼源頭，規模怎樣的數據？", "a": "不同、龐大而複雜", "d": ["單一、微小而簡單", "官方、固定而整齊", "本地、有限而單調"]},
+  {"sectionId": "ch二_1.2", "subtopic": "1.2 大數據的特徵", "q": "「數據量大」是指傳統的數據庫和分析技術難以對大數據作什麼？", "a": "有效處理", "d": ["永久刪除", "公開展示", "局部抄襲"]},
+  {"sectionId": "ch二_1.2", "subtopic": "1.2 大數據的特徵", "q": "「種類多樣」是指數據沒有什麼結構或格式，要怎樣做才能應用？", "a": "一致的、整合、分析", "d": ["複雜的、分割、隱藏", "數碼的、列印、存檔", "公開的、加密、銷毀"]},
+  {"sectionId": "ch二_1.2", "subtopic": "1.2 大數據的特徵", "q": "「處理快速」是指數據什麼的速度快並不斷什麼，須怎樣處理、分析和配置資料？", "a": "生成和傳播、更新、即時", "d": ["銷毀和流失、減少、延遲", "壓縮和封存、停滯、定期", "購買和轉售、貶值、離線"]},
+  {"sectionId": "ch二_1.2", "subtopic": "1.2 大數據的應用", "q": "在產品與服務營銷中，企業收集、什麼客戶數據，以什麼他們的消費需要？", "a": "分析、預測", "d": ["公開、限制", "刪除、忽略", "篡改、控制"]},
+  {"sectionId": "ch二_1.2", "subtopic": "1.2 大數據的應用", "q": "企業用什麼系統向顧客推介更符合他們需要的什麼產品和服務？", "a": "推薦系統、個性化", "d": ["監控系統、標準化", "防衛系統、單一化", "結算系統、廉價化"]},
+  {"sectionId": "ch二_1.2", "subtopic": "1.2 大數據的應用", "q": "在金融交易與管理中，分析客戶的什麼，以制定合適的金融產品？", "a": "交易紀錄、投資取向", "d": ["醫療紀錄、飲食習慣", "出行紀錄、政治立場", "學業成績、社交圈子"]},
+  {"sectionId": "ch二_1.2", "subtopic": "1.2 大數據的應用", "q": "金融機構分析客戶的什麼，以減低壞帳風險；並識別詐騙、「洗黑錢」等交易以減低什麼風險？", "a": "信貸紀錄、消費行為、法律", "d": ["犯罪紀錄、儲蓄金額、匯率", "納稅紀錄、家庭背景、通脹", "旅遊紀錄、健康狀況、破產"]},
+  {"sectionId": "ch二_1.2", "subtopic": "1.2 大數據的應用", "q": "在醫療衛生防疫上，大數據可用於追蹤病毒的什麼，以控制疫情？", "a": "傳播途徑、源頭", "d": ["基因結構、毒性", "疫苗價格、產量", "病患姓名、國籍"]},
+  {"sectionId": "ch二_1.2", "subtopic": "1.2 大數據的應用", "q": "在物流和運輸上，分析數據可規劃最佳什麼，同時有助加強什麼管理，確保短時間送達貨品？", "a": "送貨路線、存貨", "d": ["生產工序、財務", "招聘流程、人事", "廣告宣傳、品牌"]},
+  {"sectionId": "ch二_1.2", "subtopic": "1.2 大數據的限制", "q": "大數據存在什麼不完整、數據什麼（夾雜扭曲或無用的數據）及數據什麼（企業拒絕分享）等問題？", "a": "數據、噪音、壟斷", "d": ["硬件、病毒、外洩", "網絡、延遲、公開", "格式、冗餘、免費"]},
+  {"sectionId": "ch二_1.2", "subtopic": "1.2 大數據的限制", "q": "大數據的什麼能力有限（未能預測未發生過的事）、數據的什麼有限、什麼不足，且無法處理什麼因素？", "a": "預測、時限、解釋力、非量化", "d": ["儲存、空間、運算力、數據化", "傳播、範圍、影響力、標準化", "收集、數量、公信力、自動化"]},
+  {"sectionId": "ch二_1.3", "subtopic": "1.3 雲端儲存的發展因素", "q": "雲端儲存的兩大發展因素是：1. 什麼興起；2. 廣泛應用什麼？", "a": "互聯網、電腦", "d": ["印刷術、紙張", "蒸汽機、機械", "智能手機、電視"]},
+  {"sectionId": "ch二_1.3", "subtopic": "1.3 雲端儲存的發展因素", "q": "企業租借網上電腦資源，營運什麼，形成對雲端服務的需求？", "a": "網站", "d": ["工廠", "實體店", "車隊"]},
+  {"sectionId": "ch二_1.3", "subtopic": "1.3 雲端儲存的發展因素", "q": "企業把不同部門的電腦集中管理，並透過什麼存取資料，甚至把電腦資源管理怎樣交給互聯網公司？", "a": "網絡、外判", "d": ["電郵、出售", "光碟、贈送", "電話、併購"]},
+  {"sectionId": "ch二_1.3", "subtopic": "1.3 雲端儲存的定義與特徵", "q": "雲端儲存是通過什麼為用戶提供資料儲存空間；其特徵包括什麼重要檔案以避免資料遺失？", "a": "互聯網、備份", "d": ["硬碟、加密", "伺服器、刪除", "局域網、壓縮"]},
+  {"sectionId": "ch二_1.3", "subtopic": "1.3 雲端儲存的特徵", "q": "雲端儲存簡單方便，可隨時隨地連接什麼存取或共享資料；且能降低成本，不須維護什麼？", "a": "互聯網、系統安全", "d": ["藍牙、辦公室衛生", "電源、員工福利", "衛星、企業形象"]},
+  {"sectionId": "ch二_1.3", "subtopic": "1.3 雲端儲存的應用", "q": "在遙距工作中，員工可隨時隨地存取工作所需的什麼，以及使用辦公室什麼？", "a": "檔案、軟件", "d": ["現金、文具", "原料、機器", "制服、車輛"]},
+  {"sectionId": "ch二_1.3", "subtopic": "1.3 雲端儲存的應用", "q": "串流影視娛樂平台用以提供什麼及網上遊戲等娛樂產品；影像監控則用以儲存什麼的影片檔？", "a": "音樂、影片、監控錄影", "d": ["小說、報紙、新聞直播", "軟件、硬件、視像會議", "廣告、海報、行車記錄"]},
+  {"sectionId": "ch二_1.3", "subtopic": "1.3 雲端儲存的限制", "q": "雲端停機可能因停電、網絡什麼、維修伺服器、自然災害而不能運作；且資料由誰管理，存在保安風險？", "a": "故障、第三方", "d": ["升級、政府部門", "暢通、用戶自己", "昂貴、國際組織"]},
+  {"sectionId": "ch二_1.3", "subtopic": "1.3 雲端儲存的限制", "q": "雲端儲存通過什麼運作，有機會遭受網絡攻擊；且缺乏控制權，不能自行什麼設備或加強什麼？", "a": "互聯網、升級、保安", "d": ["電話線、購買、速度", "電纜、拆卸、容量", "無線電、出租、外觀"]},
+  {"sectionId": "ch二_2", "subtopic": "2 改變消費模式", "q": "個人化推銷策略是分析顧客過往什麼、搜尋什麼的數據，針對每位顧客制定推銷策略？", "a": "購物、商品", "d": ["出行、路線", "借貸、銀行", "醫療、藥物"]},
+  {"sectionId": "ch二_2", "subtopic": "2 改變消費模式", "q": "個人化推銷策略有利提高推銷效率，令部分消費者逐漸怎樣商戶的推介作消費決定？", "a": "依賴", "d": ["抗拒", "忽略", "投訴"]},
+  {"sectionId": "ch二_2", "subtopic": "2 方便交通出行", "q": "建立智慧交通系統，可透過調節什麼訊號等，舒緩交通擠塞；並協助部門執法，打擊什麼駕駛？", "a": "交通燈、超速", "d": ["無線電、無牌", "廣播、疲勞", "導航、跨境"]},
+  {"sectionId": "ch二_2", "subtopic": "2 方便交通出行", "q": "提供路面交通情況、停車空位、交通工具什麼等資料，方便市民規劃行程？", "a": "到站時間", "d": ["車廂溫度", "司機姓名", "製造年份"]},
+  {"sectionId": "ch二_2", "subtopic": "2 改善環境素質", "q": "監察環境污染可協助找出污染較什麼的地區和污染的什麼，以找出解決方法？", "a": "嚴重、源頭", "d": ["輕微、成本", "偏遠、歷史", "罕見、種類"]},
+  {"sectionId": "ch二_2", "subtopic": "2 改善環境素質", "q": "城市管理可安裝因應環境光度什麼的照明系統、於什麼時自動暫停運作的電梯等，以減少能源消耗？", "a": "自行調節、閒置", "d": ["固定不變、繁忙", "閃爍警報、故障", "遠程關閉、超載"]},
+  {"sectionId": "ch二_2", "subtopic": "2 保護公眾安全", "q": "人臉識別技術有助識別犯罪分子、尋找什麼、識別需要緊急救援服務的市民等？", "a": "失蹤人口", "d": ["外籍遊客", "逃稅富豪", "失業勞工"]},
+  {"sectionId": "ch二_2", "subtopic": "2 保護公眾安全", "q": "防範自然災害方面，透過監察狀況及分析歷史資料，可預測自然災害發生的什麼和什麼範圍？", "a": "機率、影響", "d": ["原因、損失", "名稱、時間", "成本、救援"]},
+  {"sectionId": "ch二_2", "subtopic": "2 衍生社會問題", "q": "失業問題：機器將逐步取締什麼、具重複性的工種；一些低技術工人可能陷入什麼以至什麼的狀況？", "a": "低技術、長期失業、貧窮", "d": ["高技術、短期失業、破產", "管理層、自願失業、轉行", "創意類、季節失業、移民"]},
+  {"sectionId": "ch二_2", "subtopic": "2 衍生社會問題", "q": "數碼鴻溝：基層人士和弱勢社群因缺乏應用什麼的技能，難以做什麼和取得所需的什麼，難以融入主流社會？", "a": "資訊科技、求職就業、社會服務", "d": ["傳統工業、創業投資、金融服務", "外國語言、出國留學、醫療服務", "法律知識、參與選舉、法律服務"]},
+  {"sectionId": "ch二_2", "subtopic": "2 衍生社會問題", "q": "侵犯私隱：政府和私營機構收集的數據包括大量什麼，如未經同意與第三方分享，會嚴重侵犯個人私隱？", "a": "個人資料", "d": ["商業機密", "國家情報", "公開數據"]},
+  {"sectionId": "ch二_2", "subtopic": "2 衍生社會問題", "q": "安全風險：黑客、惡意軟件可通過什麼入侵電腦系統，造成資料外洩、系統癱瘓等風險？", "a": "互聯網", "d": ["電源線", "印刷品", "實體信件"]},
+  {"sectionId": "ch二_2", "subtopic": "2 衍生社會問題", "q": "責任爭議：新科技應用出現事故時，往往難以釐清什麼問題？", "a": "法律和道德責任", "d": ["經濟和財務賠償", "技術和硬件故障", "行政和人事管理"]},
+  {"sectionId": "ch二_1 & 1.1", "subtopic": "核心內容解構：全球新科技", "q": "人工智能可分為3發展階段：什麼邏輯、什麼系統、什麼學習？", "a": "符號、專家、機器", "d": ["數學、電腦、深度", "語言、網絡、自主", "傳統、智能、人工"]},
+  {"sectionId": "ch二_2", "subtopic": "核心內容解構：日常影響", "q": "新科技發展在改善環境素質方面，能做什麼環境污染及改善城市什麼；在保護公眾安全方面，能改善城市什麼及加強什麼能力？", "a": "監察、管理、治安、防災", "d": ["消除、基建、交通、醫療", "轉移、規劃、經濟、軍事", "掩蓋、綠化、衛生、救援"]},
+  {"sectionId": "ch二_2", "subtopic": "核心內容解構：日常影響", "q": "新科技發展衍生的五大社會問題包括：什麼問題、什麼鴻溝、侵犯什麼、什麼風險及什麼爭議？", "a": "失業、數碼、私隱、安全、責任", "d": ["老齡、城鄉、版權、金融、道德", "貧窮、貧富、人權、環境、法律", "房屋、代溝、財產、健康、政治"]},
+  {"sectionId": "ch三_1", "subtopic": "1 互聯網發展的階段", "q": "Web 1.0（網絡）階段是以什麼為中心，使用者可在互聯網搜尋所需資料？", "a": "資訊", "d": ["人", "機器", "代理"]},
+  {"sectionId": "ch三_1", "subtopic": "1 互聯網發展的階段", "q": "Web 2.0（社交網絡）階段是以什麼為本，使用者可藉互聯網互相溝通、分享資訊，能雙向互動？", "a": "人", "d": ["資訊", "硬件", "企業"]},
+  {"sectionId": "ch三_1", "subtopic": "1 互聯網發展的階段", "q": "Web 3.0（語意網）階段是以什麼為中心，廣泛應用人工智能，能理解語音指令，並提供精準服務？", "a": "機器", "d": ["資訊", "人", "代理"]},
+  {"sectionId": "ch三_1", "subtopic": "1 互聯網發展的階段", "q": "Web 4.0（無處不在）階段是以什麼為中心，電腦化身為語音助理，為網民提供全天候服務？", "a": "代理", "d": ["機器", "數據", "網絡"]},
+  {"sectionId": "ch三_1.1", "subtopic": "1.1 互聯網（定義）", "q": "互聯網是由什麼地方的電腦網絡互相連接形成？", "a": "全球各地", "d": ["單一國家", "政府部門", "軍事基地"]},
+  {"sectionId": "ch三_1.1", "subtopic": "1.1 互聯網（定義）", "q": "互聯網令電腦可以跨地域互通什麼，並共享什麼、軟件等資源？", "a": "資訊、數據", "d": ["電流、硬件", "資金、商品", "勞工、土地"]},
+  {"sectionId": "ch三_1.1", "subtopic": "1.1 互聯網（發展）", "q": "1969年誕生的阿帕網是互聯網的什麼，可傳送簡單什麼和分享檔案？", "a": "前身、訊息", "d": ["終點、包裹", "分支、資金", "競品、硬件"]},
+  {"sectionId": "ch三_1.1", "subtopic": "1.1 互聯網（發展）", "q": "1980年代的 TCP/IP 通訊協定，訂立電腦網絡處理數據的什麼，促進各地電腦網絡怎樣運作？", "a": "標準、互聯互通", "d": ["價格、各自為政", "稅率、壟斷經營", "刑罰、封閉獨立"]},
+  {"sectionId": "ch三_1.1", "subtopic": "1.1 互聯網（發展）", "q": "1990年代萬維網（WWW）出現，公眾可怎樣使用互聯網服務？", "a": "訂購", "d": ["壟斷", "免費繼承", "強制徵用"]},
+  {"sectionId": "ch三_1.1", "subtopic": "1.1 互聯網（發展）", "q": "萬維網確立了以什麼為基礎的資訊分享方式，令公眾更容易通過互聯網做什麼？", "a": "網頁、分享資訊", "d": ["電報、買賣股票", "書信、寄送包裹", "廣播、收聽音樂"]},
+  {"sectionId": "ch三_1.1", "subtopic": "1.1 互聯網（發展）", "q": "流動通訊網絡毋須連接什麼，可隨時隨地連接互聯網，並已發展至第幾代（什麼）？", "a": "網絡電纜、五、5G", "d": ["電源插座、三、3G", "衛星訊號、四、4G", "無線路由器、六、6G"]},
+  {"sectionId": "ch三_1.1", "subtopic": "1.1 互聯網（應用）", "q": "在通訊與檔案分享應用上，網民可通過電子郵件、什麼會議傳遞訊息；或運用什麼硬碟、即時什麼軟件分享檔案？", "a": "視像、雲端、通訊", "d": ["電話、外置、修圖", "實體、本地、防毒", "廣播、固態、辦公"]},
+  {"sectionId": "ch三_1.1", "subtopic": "1.1 互聯網（應用）", "q": "在資料搜尋上，網民可運用搜尋器以什麼、語音、圖片搜尋檔案或網頁資訊？", "a": "關鍵字", "d": ["條形碼", "身份證", "銀行卡"]},
+  {"sectionId": "ch三_1.1", "subtopic": "1.1 互聯網（應用）", "q": "物聯網把各種電子裝置以互聯網連接，通過互聯網接收什麼、交換什麼，常應用於什麼家居、什麼城市等範疇？", "a": "指令、數據、智能、智慧", "d": ["資金、商品、傳統、工業", "電波、零件、綠色、生態", "郵件、檔案、現代、金融"]},
+  {"sectionId": "ch三_1.2", "subtopic": "1.2 社交媒體（定義）", "q": "社交媒體是以互聯網為基礎的什麼平台，用戶可互相分享什麼、發表意見，透過交流建立什麼？", "a": "溝通、資訊、社交網絡", "d": ["交易、資金、商業同盟", "生產、原料、供應鏈條", "執法、情報、監控系統"]},
+  {"sectionId": "ch三_1.2", "subtopic": "1.2 社交媒體（發展）", "q": "1980年代，什麼的前身——什麼出現，成為用戶交流意見的平台？", "a": "網上論壇、新聞組", "d": ["電子郵件、電報局", "搜尋引擎、資料庫", "網購平台、拍賣行"]},
+  {"sectionId": "ch三_1.2", "subtopic": "1.2 社交媒體（發展）", "q": "1990年代隨着什麼發展，出現了具什麼功能的網站，以及方便分享個人資訊的什麼？", "a": "萬維網、社交、網誌", "d": ["阿帕網、軍事、論壇", "局域網、交易、網店", "廣播網、娛樂、電台"]},
+  {"sectionId": "ch三_1.2", "subtopic": "1.2 社交媒體（發展）", "q": "21世紀 Facebook 等什麼誕生，加上什麼等流動通訊設備出現，推動各種社交媒體發展？", "a": "社交網站、智能手機", "d": ["門戶網站、桌上電腦", "新聞網站、傳呼機", "購物網站、智能手錶"]},
+  {"sectionId": "ch三_1.2", "subtopic": "1.2 社交媒體（政府應用）", "q": "政府機構應用社交媒體向公眾傳遞什麼、宣傳什麼，以爭取公眾對政府的什麼？", "a": "資訊、政府政策、支持和信任", "d": ["資金、選舉口號、捐款和納稅", "命令、法律條文、服從和畏懼", "物資、福利措施、依賴和盲從"]},
+  {"sectionId": "ch三_1.2", "subtopic": "1.2 社交媒體（政府應用）", "q": "政府機構透過社交媒體收集什麼，並鼓勵公眾參與什麼，從而提高施政效能？", "a": "公眾意見、政策討論", "d": ["個人私隱、義務工作", "商業機密、稅務申報", "犯罪證據、司法審判"]},
+  {"sectionId": "ch三_1.2", "subtopic": "1.2 社交媒體（企業應用）", "q": "企業搜集和分析用戶訊息，以掌握什麼和消費者的什麼；同時塑造什麼，以及與顧客作什麼？", "a": "市場狀況、喜好、品牌形象、互動交流", "d": ["政治動向、收入、壟斷地位、價格談判", "員工表現、行蹤、企業規模、簽訂合約", "競爭對手、密碼、產品標準、法律訴訟"]},
+  {"sectionId": "ch三_1.2", "subtopic": "1.2 社交媒體（個人應用）", "q": "個人應用社交媒體與朋友聯絡，維繫什麼；並分享什麼，建立分享和討論特定話題的什麼？", "a": "社交圈子、資訊、平台", "d": ["商業利益、財富、公司", "家族血統、秘密、工會", "政治同盟、權力、政黨"]},
+  {"sectionId": "ch三_1.3", "subtopic": "1.3 即時通訊軟件（定義與發展）", "q": "即時通訊軟件是進行網上什麼的軟件，可進行什麼或什麼會議；1970年代開發通過什麼供多人作緊急通訊？", "a": "交流、溝通、實時通話、視像、電腦網絡", "d": ["買賣、結算、語音留言、電話、衛星系統", "編程、設計、檔案備份、實體、光纖電纜", "監控、追蹤、文字廣播、閉路、無線電波"]},
+  {"sectionId": "ch三_1.3", "subtopic": "1.3 即時通訊軟件（發展）", "q": "1996年 ICQ 面世和普及，奠定即時通訊軟件的什麼；其後隨着什麼普及，漸成為大眾日常通訊主要工具？", "a": "基本模式、智能手機", "d": ["收費標準、個人電腦", "法律規管、平板電腦", "硬件規格、智能電視"]},
+  {"sectionId": "ch三_1.3", "subtopic": "1.3 即時通訊軟件（應用）", "q": "個人應用即時通訊軟件可怎樣與親友聯絡，並成為分享和接收什麼資訊的重要渠道？", "a": "隨時隨地、生活及時事", "d": ["定期定時、軍事及機密", "付費預約、學術及科研", "匿名單向、金融及股市"]},
+  {"sectionId": "ch三_1.3", "subtopic": "1.3 即時通訊軟件（應用）", "q": "即時通訊軟件成為企業什麼通訊的工具；有助聯絡顧客提供客服，並向顧客提供什麼等資訊以達促銷效果？", "a": "內部、產品、優惠", "d": ["跨國、稅務、罰款", "公開、招聘、薪酬", "官方、股價、分紅"]},
+  {"sectionId": "ch三_2", "subtopic": "2 資訊社會形成（訊息化）", "q": "訊息化：社會生產和應用資訊的能力不斷怎樣，資訊成為經濟和社會發展的什麼，促進什麼經濟和什麼經濟？", "a": "提升、重要動力、訊息、知識型", "d": ["下降、主要阻力、傳統、勞力型", "停滯、唯一標準、農業、工業型", "萎縮、附屬工具、泡沫、炒賣型"]},
+  {"sectionId": "ch三_2", "subtopic": "2 資訊社會形成（訊息化）", "q": "在訊息化下，什麼的應用趨廣泛，包括各種公共服務和什麼？", "a": "資訊科技、商業活動", "d": ["傳統工藝、宗教活動", "軍事武器、政治活動", "自然資源、農業活動"]},
+  {"sectionId": "ch三_2", "subtopic": "2 資訊社會形成（數據化與智能化）", "q": "數據化是把資訊轉換成什麼能夠處理的格式，方便存取和什麼資料；智能化則是廣泛應用什麼等技術，令系統能怎樣運作？", "a": "電腦、應用、人工智能、大數據、自動化", "d": ["人腦、背誦、傳統機械、蒸汽機、手動化", "紙本、列印、光學纖維、半導體、標準化", "圖像、觀賞、生物科技、新材料、單一化"]},
+  {"sectionId": "ch三_2", "subtopic": "2 訊息傳播迅速廣泛", "q": "用戶在自己的什麼內轉發訊息，既是接收者也是什麼；發展出「多點對多點」的什麼傳播方式，促進訊息廣泛傳播及不斷什麼？", "a": "社交圈子、發送者、病毒式、更新", "d": ["家庭群組、審查者、直線式、刪除", "工作部門、擁有者、單向式、封存", "秘密社團、創造者、金字塔、貶值"]},
+  {"sectionId": "ch三_2", "subtopic": "2 跨地域間溝通互動", "q": "跨地域什麼通訊、實時什麼訊息，能增進各地用戶的什麼？", "a": "即時、分享、交流和了解", "d": ["延遲、隱藏、競爭和對立", "付費、買賣、依賴和盲從", "單向、廣播、同化和統一"]},
+  {"sectionId": "ch三_2", "subtopic": "2 資訊良莠不齊", "q": "部分資訊可能包含什麼的訊息；部分機構或個人為爭取什麼和什麼，以嘩眾取寵內容吸引用戶什麼，令資訊未必什麼？", "a": "不實、誤導、點擊率、瀏覽量、注意、可靠", "d": ["機密、違法、知名度、訂閱量、同情、公開", "專業、深奧、收視率、銷售量、購買、免費", "傳統、保守、支持率、轉發量、贊助、合法"]},
+  {"sectionId": "ch三_1.1", "subtopic": "核心內容解構：發展概況", "q": "流動通訊技術發展至第五代，其上下載速度更怎樣，延遲時間更短；社交媒體在企業應用上可用於做什麼市場資訊及什麼品牌形象？", "a": "快、收集、建立", "d": ["慢、壟斷、摧毀", "穩、隱藏、模仿", "高、購買、取消"]},
+  {"sectionId": "ch三_2", "subtopic": "核心內容解構：發展特徵", "q": "跨地域即時通訊增加，各地用戶什麼和什麼增加；資訊來源更什麼，但同時有大量未經什麼的資訊，充斥什麼難辨的資訊？", "a": "交流、了解、豐富多元、查證、真假", "d": ["摩擦、衝突、單一匱乏、審批、善惡", "交易、合作、公開透明、加密、美醜", "遷徙、定居、昂貴稀有、授權、新舊"]},
+  {"sectionId": "ch四_1", "subtopic": "1 甚麼是資訊素養？", "q": "資訊素養的定義是指能有效和怎樣地使用、提供、互通和評估資訊的能力和態度？", "a": "符合道德", "d": ["創造利潤", "逃避法規", "迎合大眾"]},
+  {"sectionId": "ch四_1", "subtopic": "1 甚麼是資訊素養？", "q": "資訊素養包括三大核心環節：識別對資訊的什麼、做什麼以判斷資訊的可靠性，以及運用資訊的什麼？", "a": "需求、評估、正確方式", "d": ["來源、修改、商業價值", "價格、隱藏、傳播速度", "數量、壟斷、技術手段"]},
+  {"sectionId": "ch四_1", "subtopic": "1 甚麼是資訊素養？", "q": "互聯網上的資訊來自不同渠道，質素怎樣，因此要小心識別、評估、查核，才可防止什麼傳播？", "a": "良莠不齊、虛假資訊", "d": ["高度統一、官方資訊", "絕對真實、機密資訊", "完全免費、商業資訊"]},
+  {"sectionId": "ch四_1", "subtopic": "1 甚麼是資訊素養？", "q": "用戶分享資訊時，往往涉及哪兩個問題；因此要了解、遵守相關什麼和什麼，才可跟別人友好互動？", "a": "版權、私隱、操守、法律", "d": ["稅務、匯率、慣例、條約", "成本、利潤、制度、規則", "政治、宗教、文化、傳統"]},
+  {"sectionId": "ch四_2.1", "subtopic": "2.1 辨別虛假資訊（形式與來源）", "q": "虛假資訊的形式包括：什麼宣傳、諷刺、什麼新聞、誇張或誤導標題、偏頗報道？", "a": "政治、假", "d": ["商業、舊", "公益、真", "學術、快"]},
+  {"sectionId": "ch四_2.1", "subtopic": "2.1 辨別虛假資訊（形式與來源）", "q": "虛假資訊的來源除了社交媒體、即時通訊軟件外，還包括什麼網站？", "a": "「內容農場」", "d": ["「官方政府」", "「學術期刊」", "「銀行金融」"]},
+  {"sectionId": "ch四_2.1", "subtopic": "2.1 辨別虛假資訊（目的）", "q": "虛假資訊的目的是為了提高瀏覽或什麼，從而賺取什麼收益？", "a": "點擊率、廣告", "d": ["知名度、版權", "收視率、訂閱", "支持率、政治"]},
+  {"sectionId": "ch四_2.1", "subtopic": "2.1 辨別虛假資訊（培養態度）", "q": "培養客觀、求真態度：要查核資訊什麼，成為負責任的什麼？", "a": "真確性、數碼公民", "d": ["趣味性、網絡紅人", "時效性、意見領袖", "商業性、平台股東"]},
+  {"sectionId": "ch四_2.1", "subtopic": "2.1 辨別虛假資訊（培養態度）", "q": "以開放、包容的態度理解不同觀點背後的什麼，避免陷入什麼效應？", "a": "理據、「同溫層」", "d": ["利益、「死胡同」", "動機、「一言堂」", "偏見、「金字塔」"]},
+  {"sectionId": "ch四_2.1", "subtopic": "2.1 辨別虛假資訊（善用事實查核）", "q": "善用事實查核資訊：比較什麼資料來源（官方資訊、學者和專業人士研究等），並善用什麼機構？", "a": "多方、事實查核機構", "d": ["單一、情報監察機構", "小道、商業公關機構", "匿名、民意調查機構"]},
+  {"sectionId": "ch四_2.1", "subtopic": "2.1 辨別虛假資訊（善用事實查核）", "q": "透過比較多方資料來源及善用查核機構，做到認真怎樣、尊重什麼？", "a": "求證、事實", "d": ["轉發、權威", "創作、個人", "批評、多數"]},
+  {"sectionId": "ch四_2.1", "subtopic": "2.1 辨別虛假資訊（檢查內容）", "q": "檢查資訊內容時，應審視什麼是否有明顯錯誤；標題是否什麼、嘩眾取寵；圖片是否經什麼？", "a": "基本資料、誇張、修改", "d": ["機密資料、平實、壓縮", "個人資料、簡短、備份", "財務資料、專業、加密"]},
+  {"sectionId": "ch四_2.1", "subtopic": "2.1 辨別虛假資訊（檢查內容）", "q": "了解推銷廣告可能有誇大成分，不可盡信；遇到表達觀點的資訊，則應審視其什麼？", "a": "理據", "d": ["字數", "排版", "熱度"]},
+  {"sectionId": "ch四_2.1", "subtopic": "2.1 辨別虛假資訊（了解來源）", "q": "了解資訊來源時，應查核是否有可靠的什麼或什麼，並分析提供者的什麼，避免受失實資訊影響？", "a": "出處、來源、動機", "d": ["贊助、廣告、背景", "版權、商標、財力", "密碼、網址、學歷"]},
+  {"sectionId": "ch四_2.2", "subtopic": "2.2 保護電腦系統和資料", "q": "電腦入侵的風險來源包括電腦什麼、什麼程式；因此要小心開啟可疑電郵、網頁、什麼及使用公共Wi-Fi？", "a": "病毒、木馬、檔案", "d": ["硬件、開源、軟件", "屏幕、系統、帳戶", "鍵盤、驅動、相片"]},
+  {"sectionId": "ch四_2.2", "subtopic": "2.2 保護電腦系統和資料", "q": "保護電腦系統的方法包括：安裝什麼和什麼，並設定安全的什麼？", "a": "防毒軟件、防火牆、登入密碼", "d": ["遊戲軟件、路由器、用戶名稱", "辦公軟件、伺服器、屏幕保護", "修圖軟件、硬碟機、自動備份"]},
+  {"sectionId": "ch四_2.2", "subtopic": "2.2 保護電腦系統和資料", "q": "在網絡安全操守上，應避免透露什麼，以及在什麼時須小心謹慎？", "a": "個人資料、分享資訊", "d": ["公開新聞、瀏覽網頁", "興趣愛好、購買電腦", "學習心得、查閱字典"]},
+  {"sectionId": "ch四_2.2", "subtopic": "2.2 謹慎分享資訊", "q": "謹慎分享資訊的原則：不應發布、轉發什麼存疑的資訊；收到包含暴力、淫褻等不良資訊應立即怎樣做？", "a": "真確性、刪除", "d": ["娛樂性、備份", "商業性、轉發", "藝術性、收藏"]},
+  {"sectionId": "ch四_2.2", "subtopic": "2.2 謹慎分享資訊", "q": "除不良資訊外，亦不應發布、轉發涉及他人什麼的資訊？", "a": "私隱", "d": ["版權", "觀點", "成就"]},
+  {"sectionId": "ch四_2.2", "subtopic": "2.2 尊重知識產權", "q": "知識產權的定義是指對自己用智慧創造的事物享有什么權利；主要包括什麼、專利、外觀設計和商標？", "a": "無形財產、版權", "d": ["有形實物、地權", "永久壟斷、政權", "絕對豁免、特權"]},
+  {"sectionId": "ch四_2.2", "subtopic": "2.2 尊重知識產權", "q": "尊重網絡知識產權：不應下載什麼、什麼和什麼？", "a": "盜版軟件、音樂、電影", "d": ["免費軟件、新聞、圖片", "公開文件、報告、數據", "試用軟件、教材、文章"]},
+  {"sectionId": "ch四_2.2", "subtopic": "2.2 尊重知識產權", "q": "使用、轉載涉及版權的網上資料前，應先得到版權持有人的什麼；並詳細標示什麼及了解什麼？", "a": "授權、同意、資料來源、使用權限", "d": ["贊助、付款、作者年齡、檔案大小", "認證、簽名、發布日期、瀏覽人數", "推薦、審批、網站名稱、下載速度"]},
+  {"sectionId": "ch四_2.2", "subtopic": "2.2 防範網絡欺凌", "q": "網絡欺凌是指在什麼上利用圖像、文字訊息等對他人作出什麼行為；包括披露他人個資（俗稱什麼）？", "a": "網絡、欺凌、「起底」", "d": ["報章、批評、「爆料」", "法庭、起訴、「舉報」", "學校、體罰、「記過」"]},
+  {"sectionId": "ch四_2.2", "subtopic": "2.2 防範網絡欺凌", "q": "網絡欺凌的傷害：損害受害人名譽，影響他們的什麼及什麼；令受害人引發什麼情緒，甚至出現什麼問題？", "a": "社交、日常生活、負面、精神健康", "d": ["學業、財務狀況、亢奮、生理疾病", "升職、政治前途、麻木、家庭破裂", "體能、飲食習慣、樂觀、記憶衰退"]},
+  {"sectionId": "ch四_2.2", "subtopic": "2.2 防範網絡欺凌", "q": "應對網絡欺凌：保持什麼，對欺凌訊息不作回應，並怎樣對待欺凌者；保留訊息向服務供應商什麼，並向師長家人什麼？", "a": "冷靜、「封鎖」、舉報、尋求協助", "d": ["憤怒、「反擊」、索償、隱瞞事實", "沉默、「討好」、妥協、借貸度日", "恐懼、「順從」、道歉、斷絕來往"]},
+  {"sectionId": "ch四_2.3", "subtopic": "2.3 遵守相關法律（版權條例）", "q": "《版權條例》涵蓋範圍：作者完成什麼後即自動獲得版權；有效期一般為直至版權持有人什麼後50年？", "a": "原創作品、逝世", "d": ["商業註冊、出生", "公開發售、退休", "政府審批、破產"]},
+  {"sectionId": "ch四_2.3", "subtopic": "2.3 遵守相關法律（版權條例）", "q": "《版權條例》違法行為：未經版權持有人什麼而管有複製品作業務使用；為貿易或業務目的什麼或什麼侵權複製品？", "a": "授權、製作、分發", "d": ["通知、借閱、收藏", "付費、瀏覽、評論", "登記、購買、銷毀"]},
+  {"sectionId": "ch四_2.3", "subtopic": "2.3 遵守相關法律（版權條例）", "q": "即使非作為貿易或業務用途，分發侵權複製品以致損害了版權持有人的什麼，亦屬違法行為？", "a": "權利", "d": ["名譽", "健康", "私隱"]},
+  {"sectionId": "ch四_2.3", "subtopic": "2.3 遵守相關法律（近年發展）", "q": "《2022年版權（修訂）條例草案》建議：版權持有人以任何電子傳送模式向公眾傳播的作品均受什麼？", "a": "法律保障", "d": ["政府徵稅", "審查限制", "強制收購"]},
+  {"sectionId": "ch四_2.3", "subtopic": "2.3 遵守相關法律（近年發展）", "q": "配合數碼環境豁免：轉換聲音紀錄的媒體以供什麼和什麼使用、教育界為什麼而傳播版權作品等均獲豁免？", "a": "私人、家居、授課", "d": ["商業、公開、盈利", "企業、跨國、宣傳", "網吧、商場、娛樂"]},
+  {"sectionId": "ch四_2.3", "subtopic": "2.3 遵守相關法律（近年發展）", "q": "公平處理豁免：戲仿、諷刺、什麼時事、引用等均獲豁免；安全港條文則讓合資格聯線服務提供者只須承擔什麼法律責任？", "a": "評論、有限的", "d": ["捏造、全部的", "轉售、無限的", "隱瞞、雙倍的"]},
+  {"sectionId": "ch四_1", "subtopic": "核心內容解構：資訊素養", "q": "資訊素養定義是有效和符合道德地使用、提供、互通和評估資訊的什麼和什麼；知識產權則是對用什麼創造事物所享有的什麼？", "a": "能力、態度、智慧、財產權利", "d": ["技術、工具、勞力、政治特權", "知識、學歷、資金、商業壟斷", "硬件、軟件、機器、人身自由"]},
+  {"sectionId": "ch四_2.3", "subtopic": "核心內容解構：相關法律", "q": "《個人資料（私隱）條例》保障什麼，而什麼行為會被起訴和懲處？", "a": "個人資訊、「起底」", "d": ["商業機密、「抄襲」", "國家安全、「洩密」", "智慧財產、「盜版」"]},
+  {"sectionId": "ch四_2.3", "subtopic": "核心內容解構：相關法律", "q": "與使用科技相關的其他香港法律包括：《什麼條例》、《什麼條例》及「什麼罪」？", "a": "淫褻及不雅物品管制、盜竊罪、有犯罪或不誠實意圖而取用電腦", "d": ["廣播及電訊管理、商業罪行、未經授權而改動電腦數據", "網絡安全及保密、欺詐罪、利用互聯網進行洗黑錢活動", "電子交易及簽署、誹謗罪、在公眾地方擾亂網絡秩序"]}
+];
+// ============================================================================
+// ▲▲▲ 題庫貼上區域結束 ▲▲▲
+// ============================================================================
+
+function safeGet(key, fallback) {
+  try {
+    const v = localStorage.getItem(key);
+    return v ? JSON.parse(v) : fallback;
+  } catch (e) { return fallback; }
+}
+
+let storedTrees = safeGet('csd_v2_trees', null);
+let storedQuestions = safeGet('csd_v2_questions', null);
+let treesData = (Array.isArray(storedTrees) && storedTrees.length >= DEFAULT_TREES.length && storedTrees.length > 0) ? storedTrees : DEFAULT_TREES;
+let questionsData = (Array.isArray(storedQuestions) && storedQuestions.length >= DEFAULT_QUESTIONS.length && storedQuestions.length > 0) ? storedQuestions : DEFAULT_QUESTIONS;
+
+let gameRecords = safeGet('csd_v2_records', []);
+let perfectCounts = safeGet('csd_v2_perfect_counts', {});
+
+let selectedThemeKey = "三";
+let selectedChapterKey = null;
+let currentStageObj = null;
+
+// 計分、計時與本局失誤追蹤
+let score = 1000;
+let totalSeconds = 0;
+let stage1Seconds = 0;
+let stage2Seconds = 0;
+let currentRunMistakes = 0;
+let timerInterval = null;
+let currentPhase = 'MENU';
+
+// 第一階段：蘋果樹與垃圾筒狀態
+let treeSlots = [];
+let poolApples = [];
+let isCheckingTree = false;
+let trashTapMode = false;
+
+// 第二階段：泡泡與大針狀態
+let stageBubblePool = [];
+let currentBubbleIdx = 0;
+let isBubbleLocked = false;
+let needleTapMode = false;
+
+// ==================== 音效合成器 ====================
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function playSFX(type) {
+  try {
+    if (!audioCtx) audioCtx = new AudioCtx();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    if (type === 'put') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(420, now);
+      osc.frequency.exponentialRampToValueAtTime(660, now + 0.1);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.11);
+      osc.start(now); osc.stop(now + 0.11);
+    } else if (type === 'trash') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(300, now);
+      osc.frequency.exponentialRampToValueAtTime(160, now + 0.12);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.13);
+      osc.start(now); osc.stop(now + 0.13);
+    } else if (type === 'pop_pin') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(680, now);
+      osc.frequency.exponentialRampToValueAtTime(1200, now + 0.09);
+      gain.gain.setValueAtTime(0.24, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+      osc.start(now); osc.stop(now + 0.1);
+    } else if (type === 'good') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(523, now);
+      osc.frequency.setValueAtTime(659, now + 0.08);
+      osc.frequency.setValueAtTime(784, now + 0.16);
+      gain.gain.setValueAtTime(0.28, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.32);
+      osc.start(now); osc.stop(now + 0.32);
+    } else if (type === 'bad') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(210, now);
+      osc.frequency.linearRampToValueAtTime(110, now + 0.3);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.32);
+      osc.start(now); osc.stop(now + 0.32);
+    } else if (type === 'win') {
+      osc.type = 'triangle';
+      [523, 659, 784, 1046].forEach((freq, idx) => {
+        osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+      });
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.5);
+      osc.start(now); osc.stop(now + 0.5);
+    }
+  } catch (e) {}
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function formatTime(sec) {
+  const m = String(Math.floor(sec / 60)).padStart(2, '0');
+  const s = String(sec % 60).padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+function applyThemeBackground(themeKey) {
+  const cfg = THEME_CONFIG[themeKey] || THEME_CONFIG["三"];
+  document.body.className = cfg.bodyClass;
+}
+
+function updateMistakeBadges() {
+  const txt = currentRunMistakes === 0
+    ? `💡 本局零失誤！(保持 0 失誤過關可點亮燈泡)`
+    : `⚠️ 本局失誤：${currentRunMistakes} 次`;
+  const el1 = document.getElementById('run-mistake-indicator');
+  const el2 = document.getElementById('run-mistake-indicator-2');
+  if (el1) el1.innerText = txt;
+  if (el2) el2.innerText = txt;
+}
+
+function updateScore(delta, showPopup = true) {
+  score += delta;
+  document.getElementById('hud-score').innerText = score;
+  if (showPopup && delta !== 0) {
+    const f = document.createElement('div');
+    f.className = 'score-float';
+    f.style.color = delta > 0 ? '#2e7d32' : '#d32f2f';
+    f.innerText = delta > 0 ? `+${delta}` : `${delta}`;
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 950);
+  }
+}
+
+function startTimer() {
+  stopTimer();
+  timerInterval = setInterval(() => {
+    totalSeconds++;
+    if (currentPhase === 'TREE') stage1Seconds++;
+    if (currentPhase === 'BUBBLE') stage2Seconds++;
+    updateScore(-10, false);
+    document.getElementById('hud-timer').innerText = formatTime(totalSeconds);
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+}
+
+// ==================== 選關首頁渲染 ====================
+function initMenu() {
+  stopTimer();
+  currentPhase = 'MENU';
+  document.getElementById('hud-apple-target').style.display = 'none';
+  document.getElementById('hud-stage-label').innerText = '請選擇主題、章節與課目';
+
+  applyThemeBackground(selectedThemeKey);
+
+  const themeTabsEl = document.getElementById('theme-tabs');
+  themeTabsEl.innerHTML = '';
+  ["一", "二", "三"].forEach(tKey => {
+    const cfg = THEME_CONFIG[tKey];
+    const countInTheme = treesData.filter(t => String(t.theme).trim() === tKey).length;
+    const tab = document.createElement('div');
+    tab.className = `theme-tab-card ${cfg.cardClass}` + (selectedThemeKey === tKey ? ' selected' : '');
+    tab.innerHTML = `
+      <div class="theme-tab-title">
+        <span>📘 ${cfg.title}</span>
+        <span style="font-size:14px; background:rgba(255,255,255,0.7); padding:2px 9px; border-radius:12px;">${countInTheme} 課目</span>
+      </div>
+      <div class="theme-tab-sub">${cfg.subtitle}</div>
+    `;
+    tab.onclick = () => {
+      selectedThemeKey = tKey;
+      selectedChapterKey = null;
+      initMenu();
+    };
+    themeTabsEl.appendChild(tab);
+  });
+
+  const themeTrees = treesData.filter(t => String(t.theme).trim() === selectedThemeKey);
+  const chListEl = document.getElementById('chapter-list');
+  const secWrapper = document.getElementById('section-list-wrapper');
+
+  if (themeTrees.length === 0) {
+    chListEl.innerHTML = '';
+    secWrapper.innerHTML = `
+      <div class="empty-theme-box">
+        <h3 style="margin:0 0 8px; font-size:21px;">🌱 「${THEME_CONFIG[selectedThemeKey].title}」位置已準備好！</h3>
+        <p style="margin:0 0 16px; color:#555; font-weight:700;">
+          請在程式碼中的 <code>DEFAULT_TREES</code> 與 <code>DEFAULT_QUESTIONS</code> 貼上題庫，或點擊右上角「➕ 新增 EXCEL 題目」匯入！
+        </p>
+      </div>
+    `;
+    return;
+  }
+
+  const chaptersMap = {};
+  themeTrees.forEach(t => {
+    const chKey = `第${t.chapter}章`;
+    if (!chaptersMap[chKey]) chaptersMap[chKey] = [];
+    chaptersMap[chKey].push(t);
+  });
+
+  const chapterKeys = Object.keys(chaptersMap);
+  if (!selectedChapterKey || !chaptersMap[selectedChapterKey]) {
+    selectedChapterKey = chapterKeys[0];
+  }
+
+  chListEl.innerHTML = '';
+  chapterKeys.forEach(k => {
+    const btn = document.createElement('div');
+    btn.className = 'chapter-card' + (k === selectedChapterKey ? ' selected' : '');
+    btn.innerText = `📂 ${k} (${chaptersMap[k].length} 個課目)`;
+    btn.onclick = () => {
+      selectedChapterKey = k;
+      initMenu();
+    };
+    chListEl.appendChild(btn);
+  });
+
+  const grid = document.createElement('div');
+  grid.className = 'section-grid';
+
+  (chaptersMap[selectedChapterKey] || []).forEach(stage => {
+    const qCount = questionsData.filter(q => q.sectionId === stage.id).length;
+    const bestRec = gameRecords
+      .filter(r => r.stageId === stage.id)
+      .sort((a, b) => b.score - a.score)[0];
+
+    const pCount = Math.min(7, perfectCounts[stage.id] || 0);
+    const isPerfectStamped = pCount >= 7;
+
+    let bulbsHtml = '';
+    for (let i = 1; i <= 7; i++) {
+      const litClass = i <= pCount ? 'lit' : '';
+      bulbsHtml += `<span class="bulb-icon ${litClass}">💡</span>`;
+    }
+
+    const card = document.createElement('div');
+    card.className = 'section-card';
+    card.innerHTML = `
+      <div class="section-info-left">
+        <span class="section-badge">課目 ${stage.section}</span>
+        <div class="section-name">${stage.title}</div>
+        <div class="section-meta">
+          <span>🍎 ${stage.correct.length} 個蘋果</span>
+          <span>🫧 ${qCount} 題泡泡</span>
+        </div>
+        <div style="font-size:12.5px; font-weight:800; color:${bestRec ? '#2e7d32' : '#888'};">
+          ${bestRec ? `🏅 最高：${bestRec.score} 分 (${formatTime(bestRec.totalSeconds)})` : '✨ 尚未挑戰'}
+        </div>
+      </div>
+
+      <div class="section-bulbs-right">
+        <div class="bulbs-label">零失誤燈泡 (${pCount}/7)</div>
+        <div class="bulbs-row">${bulbsHtml}</div>
+      </div>
+
+      ${isPerfectStamped ? `<div class="perfect-red-stamp">完美</div>` : ''}
+    `;
+    card.onclick = () => launchStageFlow(stage);
+    grid.appendChild(card);
+  });
+
+  secWrapper.innerHTML = '';
+  secWrapper.appendChild(grid);
+}
+
+function showScreen(screenId) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+}
+
+function returnToMenu() {
+  stopTimer();
+  document.getElementById('transition-overlay').classList.remove('active');
+  showScreen('screen-menu');
+  initMenu();
+}
+
+function showTransition({ tag, title, desc, btnText, onContinue }) {
+  stopTimer();
+  const overlay = document.getElementById('transition-overlay');
+  document.getElementById('trans-tag').innerText = tag;
+  document.getElementById('trans-title').innerText = title;
+  document.getElementById('trans-desc').innerHTML = desc;
+  const btn = document.getElementById('trans-btn');
+  btn.innerText = btnText;
+  btn.onclick = () => {
+    overlay.classList.remove('active');
+    onContinue();
+  };
+  overlay.classList.add('active');
+}
+
+// ==================== 啟動關卡 ====================
+function launchStageFlow(stageObj) {
+  currentStageObj = stageObj;
+  applyThemeBackground(String(stageObj.theme).trim());
+
+  score = 1000;
+  totalSeconds = 0;
+  stage1Seconds = 0;
+  stage2Seconds = 0;
+  currentRunMistakes = 0;
+  updateMistakeBadges();
+
+  document.getElementById('hud-score').innerText = score;
+  document.getElementById('hud-timer').innerText = '00:00';
+  document.getElementById('hud-stage-label').innerText = `課目 ${stageObj.section}：${stageObj.title}`;
+
+  const n = stageObj.correct.length;
+  const curBulbs = Math.min(7, perfectCounts[stageObj.id] || 0);
+
+  showTransition({
+    tag: `主題${stageObj.theme} ｜ 課目 ${stageObj.section}`,
+    title: `🌳 第一階段：宏觀戰略蘋果樹`,
+    desc: `
+      核心主題：<b>「${stageObj.title}」</b><br><br>
+      📌 本關需從周圍挑選出 <b>${n} 個正確蘋果</b> 放入樹中（放滿 ${n} 個才一次過檢驗）。<br>
+      📌 答對每個蘋果 <b>+100 分</b>；錯的會變成<b>壞蘋果消失並扣 50 分</b>！<br>
+      ⏱️ 底分 <b>1000 分</b>，每秒倒扣 <b>10 分</b>！<br>
+      💡 目前本課目已點亮 <b>${curBulbs} / 7 個燈泡</b>，全程 0 失誤即可再點亮 1 個！
+    `,
+    btnText: `🍎 開始第一階段挑戰！`,
+    onContinue: () => startStage1Tree()
+  });
+}
+
+function replayCurrentStage() {
+  closeModals();
+  if (currentStageObj) launchStageFlow(currentStageObj);
+}
+
+// ==================== 第一階段：宏觀戰略蘋果樹邏輯 ====================
+function startStage1Tree() {
+  currentPhase = 'TREE';
+  isCheckingTree = false;
+  trashTapMode = false;
+  document.getElementById('trash-bin-bar').classList.remove('active-mode');
+  showScreen('screen-tree');
+
+  const n = currentStageObj.correct.length;
+  document.getElementById('hud-apple-target').style.display = 'flex';
+  document.getElementById('tree-trunk-title').innerText = currentStageObj.title;
+  document.getElementById('tree-feedback-msg').innerText =
+    `👾 請將 ${n} 個正確分支蘋果放上樹冠！放滿 ${n} 個蘋果後會自動揭曉答案！`;
+
+  treeSlots = Array.from({ length: n }, () => ({ status: 'empty', appleObj: null }));
+
+  const wrongSample = shuffle(currentStageObj.wrong).slice(0, n * 2);
+  const combined = [
+    ...currentStageObj.correct.map((text, idx) => ({
+      id: `c_${idx}`, text, isCorrect: true, state: 'pool', isGold: false
+    })),
+    ...wrongSample.map((text, idx) => ({
+      id: `w_${idx}`, text, isCorrect: false, state: 'pool', isGold: false
+    }))
+  ];
+  poolApples = shuffle(combined);
+
+  renderTreeStage();
+  startTimer();
+}
+
+function toggleTrashTapMode() {
+  if (isCheckingTree) return;
+  trashTapMode = !trashTapMode;
+  document.getElementById('trash-bin-bar').classList.toggle('active-mode', trashTapMode);
+}
+
+function renderTreeStage() {
+  const n = treeSlots.length;
+  const filledCount = treeSlots.filter(s => s.status !== 'empty').length;
+  document.getElementById('apple-slot-progress').innerText = `${filledCount} / ${n} 個`;
+
+  const slotsGrid = document.getElementById('tree-slots-grid');
+  slotsGrid.innerHTML = '';
+  treeSlots.forEach((slot, idx) => {
+    const slotEl = document.createElement('div');
+    if (slot.status === 'empty') {
+      slotEl.className = 'tree-slot';
+      slotEl.innerText = `空位 ${idx + 1}`;
+    } else if (slot.status === 'staged') {
+      slotEl.className = 'tree-slot staged' + (slot.appleObj.isGold ? ' gold-staged' : '');
+      slotEl.innerText = slot.appleObj.text;
+      slotEl.onclick = () => {
+        if (isCheckingTree) return;
+        slot.appleObj.state = 'pool';
+        slot.status = 'empty';
+        slot.appleObj = null;
+        playSFX('put');
+        renderTreeStage();
+      };
+    } else if (slot.status === 'locked') {
+      slotEl.className = 'tree-slot locked-correct';
+      slotEl.innerText = `✅ ${slot.appleObj.text}`;
+    } else if (slot.status === 'rotten') {
+      slotEl.className = 'tree-slot rotten-wrong';
+      slotEl.innerText = `🐛 壞蘋果：${slot.appleObj.text}`;
+    }
+    slotsGrid.appendChild(slotEl);
+  });
+
+  const poolEl = document.getElementById('apples-pool');
+  poolEl.innerHTML = '';
+  const available = poolApples.filter(a => a.state === 'pool');
+  document.getElementById('orchard-remaining-count').innerText = `待選 ${available.length} 個`;
+
+  available.forEach(apple => {
+    const el = document.createElement('div');
+    el.className = 'apple-item' + (apple.isGold ? ' gold-apple' : '');
+    el.innerText = apple.text;
+    setupAppleDragAndTap(el, apple);
+    poolEl.appendChild(el);
+  });
+}
+
+// 平板極速流暢拖曳（按下時快取座標 + translate3d 零延遲）
+function setupAppleDragAndTap(el, appleObj) {
+  let startX = 0, startY = 0, moved = false;
+  let cRect = null, tRect = null;
+  const canopy = document.getElementById('tree-canopy');
+  const trashBar = document.getElementById('trash-bin-bar');
+
+  el.addEventListener('pointerdown', (e) => {
+    if (isCheckingTree) return;
+    el.setPointerCapture(e.pointerId);
+    startX = e.clientX;
+    startY = e.clientY;
+    moved = false;
+    cRect = canopy.getBoundingClientRect();
+    tRect = trashBar.getBoundingClientRect();
+    el.classList.add('dragging');
+  });
+
+  el.addEventListener('pointermove', (e) => {
+    if (!el.classList.contains('dragging') || isCheckingTree) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (!moved && Math.hypot(dx, dy) > 8) moved = true;
+    el.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(1.08)`;
+
+    if (e.clientX >= cRect.left && e.clientX <= cRect.right &&
+        e.clientY >= cRect.top && e.clientY <= cRect.bottom) {
+      canopy.classList.add('drag-hover');
+    } else {
+      canopy.classList.remove('drag-hover');
+    }
+
+    if (e.clientX >= tRect.left && e.clientX <= tRect.right &&
+        e.clientY >= tRect.top && e.clientY <= tRect.bottom) {
+      trashBar.classList.add('drag-hover');
+    } else {
+      trashBar.classList.remove('drag-hover');
+    }
+  });
+
+  el.addEventListener('pointerup', (e) => {
+    if (!el.classList.contains('dragging')) return;
+    el.classList.remove('dragging');
+    canopy.classList.remove('drag-hover');
+    trashBar.classList.remove('drag-hover');
+    el.style.transform = '';
+
+    const droppedInTrash = tRect && (
+      e.clientX >= tRect.left && e.clientX <= tRect.right &&
+      e.clientY >= tRect.top && e.clientY <= tRect.bottom
+    );
+
+    const droppedInTree = cRect && (
+      e.clientX >= cRect.left && e.clientX <= cRect.right &&
+      e.clientY >= cRect.top && e.clientY <= cRect.bottom
+    );
+
+    if (droppedInTrash) {
+      throwAppleToTrash(appleObj);
+    } else if (droppedInTree) {
+      mountAppleToTree(appleObj);
+    } else if (!moved) {
+      if (trashTapMode && !appleObj.isGold) {
+        throwAppleToTrash(appleObj);
+      } else {
+        mountAppleToTree(appleObj);
+      }
+    }
+  });
+}
+
+function throwAppleToTrash(appleObj) {
+  if (isCheckingTree || appleObj.isGold) return;
+  playSFX('trash');
+  appleObj.state = 'trashed';
+  renderTreeStage();
+
+  // 若待選池剩下的蘋果少於樹冠空位，自動將誤丟垃圾筒的正確答案變成金蘋果拉回池中
+  const emptySlotsCount = treeSlots.filter(s => s.status === 'empty').length;
+  const poolAvailableCount = poolApples.filter(a => a.state === 'pool').length;
+  if (poolAvailableCount < emptySlotsCount) {
+    rescueTrashedCorrectApples();
+  }
+}
+
+function rescueTrashedCorrectApples() {
+  const trashedCorrect = poolApples.filter(a => a.state === 'trashed' && a.isCorrect);
+  if (trashedCorrect.length > 0) {
+    playSFX('bad');
+    currentRunMistakes += trashedCorrect.length;
+    updateMistakeBadges();
+    updateScore(-50 * trashedCorrect.length, true);
+    trashedCorrect.forEach(a => {
+      a.state = 'pool';
+      a.isGold = true;
+    });
+    renderTreeStage();
+  }
+}
+
+function mountAppleToTree(appleObj) {
+  if (isCheckingTree) return;
+  const emptySlot = treeSlots.find(s => s.status === 'empty');
+  if (!emptySlot) return;
+
+  playSFX('put');
+  appleObj.state = 'staged';
+  emptySlot.status = 'staged';
+  emptySlot.appleObj = appleObj;
+  renderTreeStage();
+
+  const allFilled = treeSlots.every(s => s.status !== 'empty');
+  if (allFilled) {
+    evaluateTreeBatch();
+  }
+}
+
+function evaluateTreeBatch() {
+  isCheckingTree = true;
+  let newlyCorrectCount = 0;
+  let wrongTreeCount = 0;
+
+  treeSlots.forEach(slot => {
+    if (slot.status === 'staged') {
+      if (slot.appleObj.isCorrect) {
+        slot.status = 'locked';
+        slot.appleObj.state = 'locked';
+        newlyCorrectCount++;
+      } else {
+        slot.status = 'rotten';
+        slot.appleObj.state = 'rotten';
+        wrongTreeCount++;
+      }
+    }
+  });
+
+  // 放好所有蘋果後，把垃圾筒內的正確答案拉回待選池並變成金蘋果
+  const trashedCorrectApples = poolApples.filter(a => a.state === 'trashed' && a.isCorrect);
+  const trashedCorrectCount = trashedCorrectApples.length;
+  if (trashedCorrectCount > 0) {
+    trashedCorrectApples.forEach(a => {
+      a.state = 'pool';
+      a.isGold = true;
+    });
+  }
+
+  const totalMistakesThisBatch = wrongTreeCount + trashedCorrectCount;
+  if (totalMistakesThisBatch > 0) {
+    currentRunMistakes += totalMistakesThisBatch;
+    updateMistakeBadges();
+  }
+
+  const totalLocked = treeSlots.filter(s => s.status === 'locked').length;
+  const n = treeSlots.length;
+  const scoreDelta = (newlyCorrectCount * 100) - (totalMistakesThisBatch * 50);
+  updateScore(scoreDelta, true);
+
+  renderTreeStage();
+
+  if (wrongTreeCount > 0) {
+    playSFX('bad');
+    document.getElementById('tree-feedback-msg').innerHTML =
+      `🔍 檢驗結果：樹上共有 <b>${totalLocked} / ${n} 個正確蘋果</b>（新增對 ${newlyCorrectCount} 個 +${newlyCorrectCount*100}分；發現 <b>${wrongTreeCount} 個壞蘋果 -${wrongTreeCount*50}分</b>）！`;
+
+    setTimeout(() => {
+      treeSlots.forEach(slot => {
+        if (slot.status === 'rotten') {
+          slot.status = 'empty';
+          slot.appleObj = null;
+        }
+      });
+      isCheckingTree = false;
+      renderTreeStage();
+    }, 1250);
+  } else {
+    playSFX('win');
+    document.getElementById('tree-feedback-msg').innerHTML =
+      `🎉 太棒了！全部 ${n} 個正確蘋果都掛上樹了！（本次 +${newlyCorrectCount * 100} 分）`;
+
+    setTimeout(() => {
+      const qCount = questionsData.filter(q => q.sectionId === currentStageObj.id).length;
+      showTransition({
+        tag: `第一階段完成！耗時 ${stage1Seconds} 秒`,
+        title: `✨ 準備進入第二階段：細節知識泡泡防衛戰`,
+        desc: `
+          你已成功完成<b>「${currentStageObj.title}」</b>的宏觀大樹！<br><br>
+          📊 目前累積分數：<b>${score} 分</b> ｜ 本局累計失誤：<b>${currentRunMistakes} 次</b><br>
+          🫧 接下來共有 <b>${qCount} 題細節知識泡泡</b> 等你擊破！<br>
+          📌 答對一題 <b>+100 分</b>、答錯 <b>-50 分</b>、每秒倒扣 <b>10 分</b>！
+        `,
+        btnText: `🫧 進入第二階段：泡泡防衛戰！`,
+        onContinue: () => startStage2Bubbles()
+      });
+    }, 1100);
+  }
+}
+
+// ==================== 第二階段：細節知識泡泡防衛戰邏輯 ====================
+function startStage2Bubbles() {
+  currentPhase = 'BUBBLE';
+  isBubbleLocked = false;
+  needleTapMode = false;
+  document.getElementById('needle-tool-box').classList.remove('active-mode');
+  document.getElementById('hud-apple-target').style.display = 'none';
+  showScreen('screen-bubble');
+
+  stageBubblePool = shuffle(questionsData.filter(q => q.sectionId === currentStageObj.id));
+  currentBubbleIdx = 0;
+
+  renderCurrentBubbleQuestion();
+  startTimer();
+}
+
+function toggleNeedleTapMode() {
+  if (isBubbleLocked) return;
+  needleTapMode = !needleTapMode;
+  document.getElementById('needle-tool-box').classList.toggle('active-mode', needleTapMode);
+}
+
+function renderCurrentBubbleQuestion() {
+  isBubbleLocked = false;
+  needleTapMode = false;
+  document.getElementById('needle-tool-box').classList.remove('active-mode');
+
+  if (currentBubbleIdx >= stageBubblePool.length) {
+    finishBothStagesVictory();
+    return;
+  }
+
+  const qObj = stageBubblePool[currentBubbleIdx];
+  document.getElementById('hud-stage-label').innerText =
+    `第二階段 (${currentBubbleIdx + 1}/${stageBubblePool.length}) ｜ ${currentStageObj.title}`;
+  document.getElementById('bubble-subtopic').innerText = qObj.subtopic;
+  document.getElementById('bubble-q-text').innerText = qObj.q;
+
+  const dropSlot = document.getElementById('bubble-drop-slot');
+  dropSlot.className = 'bubble-drop-slot';
+  dropSlot.innerText = '✨ 拖曳或點擊下方泡泡到此 ✨';
+
+  const options = shuffle([
+    { text: qObj.a, isCorrect: true },
+    ...qObj.d.map(dText => ({ text: dText, isCorrect: false }))
+  ]);
+
+  const row = document.getElementById('bubble-options-row');
+  row.innerHTML = '';
+  options.forEach(opt => {
+    const b = document.createElement('div');
+    b.className = 'answer-bubble';
+    b.innerText = opt.text;
+    setupBubbleDragAndTap(b, opt.text, opt.isCorrect);
+    row.appendChild(b);
+  });
+}
+
+// 平板極速流暢泡泡拖曳（按下時快取座標 + translate3d 零延遲）
+function setupBubbleDragAndTap(el, text, isCorrect) {
+  let startX = 0, startY = 0, moved = false;
+  let gRect = null, nRect = null;
+  const giantTarget = document.getElementById('giant-bubble-target');
+  const dropSlot = document.getElementById('bubble-drop-slot');
+  const needleBox = document.getElementById('needle-tool-box');
+
+  el.addEventListener('pointerdown', (e) => {
+    if (isBubbleLocked) return;
+    el.setPointerCapture(e.pointerId);
+    startX = e.clientX;
+    startY = e.clientY;
+    moved = false;
+    gRect = giantTarget.getBoundingClientRect();
+    nRect = needleBox.getBoundingClientRect();
+    el.classList.add('dragging');
+  });
+
+  el.addEventListener('pointermove', (e) => {
+    if (!el.classList.contains('dragging') || isBubbleLocked) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (!moved && Math.hypot(dx, dy) > 8) moved = true;
+    el.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(1.08)`;
+
+    if (e.clientX >= gRect.left && e.clientX <= gRect.right &&
+        e.clientY >= gRect.top && e.clientY <= gRect.bottom) {
+      dropSlot.classList.add('drag-over');
+    } else {
+      dropSlot.classList.remove('drag-over');
+    }
+
+    if (e.clientX >= nRect.left && e.clientX <= nRect.right &&
+        e.clientY >= nRect.top && e.clientY <= nRect.bottom) {
+      needleBox.classList.add('drag-hover');
+    } else {
+      needleBox.classList.remove('drag-hover');
+    }
+  });
+
+  el.addEventListener('pointerup', (e) => {
+    if (!el.classList.contains('dragging')) return;
+    el.classList.remove('dragging');
+    dropSlot.classList.remove('drag-over');
+    needleBox.classList.remove('drag-hover');
+    el.style.transform = '';
+
+    const droppedInNeedle = nRect && (
+      e.clientX >= nRect.left && e.clientX <= nRect.right &&
+      e.clientY >= nRect.top && e.clientY <= nRect.bottom
+    );
+
+    const droppedInTarget = gRect && (
+      e.clientX >= gRect.left && e.clientX <= gRect.right &&
+      e.clientY >= gRect.top && e.clientY <= gRect.bottom
+    );
+
+    if (droppedInNeedle) {
+      handleNeedlePrickBubble(el, text, isCorrect);
+    } else if (droppedInTarget) {
+      handleBubbleAnswer(el, text, isCorrect);
+    } else if (!moved) {
+      if (needleTapMode && !el.classList.contains('revealed-correct')) {
+        handleNeedlePrickBubble(el, text, isCorrect);
+      } else {
+        handleBubbleAnswer(el, text, isCorrect);
+      }
+    }
+  });
+}
+
+function handleNeedlePrickBubble(bubbleEl, text, isCorrect) {
+  if (isBubbleLocked) return;
+
+  if (!isCorrect) {
+    playSFX('pop_pin');
+    bubbleEl.innerText = `💥 爆破！`;
+    bubbleEl.classList.add('burst-wrong');
+  } else {
+    // 若移到針的是正確答案，直接變成正確顯示，且本局不獲燈泡
+    playSFX('bad');
+    currentRunMistakes++;
+    updateMistakeBadges();
+    updateScore(-50, true);
+
+    bubbleEl.classList.add('revealed-correct');
+    bubbleEl.innerText = `✅ ${text}`;
+    needleTapMode = false;
+    document.getElementById('needle-tool-box').classList.remove('active-mode');
+
+    const dropSlot = document.getElementById('bubble-drop-slot');
+    dropSlot.className = 'bubble-drop-slot correct';
+    dropSlot.innerText = `✅ ${text}`;
+  }
+}
+
+function handleBubbleAnswer(bubbleEl, text, isCorrect) {
+  if (isBubbleLocked) return;
+  const dropSlot = document.getElementById('bubble-drop-slot');
+
+  if (isCorrect) {
+    isBubbleLocked = true;
+    playSFX('good');
+    const wasRevealedByNeedle = bubbleEl.classList.contains('revealed-correct');
+    bubbleEl.classList.add('popped');
+    dropSlot.className = 'bubble-drop-slot correct';
+
+    if (wasRevealedByNeedle) {
+      dropSlot.innerText = `✅ ${text}`;
+    } else {
+      dropSlot.innerText = `✅ ${text} (+100分)`;
+      updateScore(100, true);
+      document.getElementById('bubble-feedback-msg').innerHTML =
+        `🎉 答對了！答案正是<b>「${text}」</b>！ (+100 分)`;
+    }
+
+    setTimeout(() => {
+      currentBubbleIdx++;
+      renderCurrentBubbleQuestion();
+    }, 850);
+  } else {
+    playSFX('bad');
+    currentRunMistakes++;
+    updateMistakeBadges();
+    bubbleEl.classList.add('popped');
+    dropSlot.className = 'bubble-drop-slot wrong';
+    dropSlot.innerText = `❌ ${text} (-50分，再試一次！)`;
+    updateScore(-50, true);
+    document.getElementById('bubble-feedback-msg').innerHTML =
+      `💥 哎呀！「${text}」是干擾項 (-50 分)，請從剩餘泡泡中選出正確答案！`;
+  }
+}
+
+// ==================== 過關結算與燈泡判定 ====================
+function finishBothStagesVictory() {
+  stopTimer();
+  playSFX('win');
+
+  const isZeroMistake = (currentRunMistakes === 0);
+  if (isZeroMistake) {
+    perfectCounts[currentStageObj.id] = (perfectCounts[currentStageObj.id] || 0) + 1;
+    localStorage.setItem('csd_v2_perfect_counts', JSON.stringify(perfectCounts));
+  }
+
+  const nowBulbs = Math.min(7, perfectCounts[currentStageObj.id] || 0);
+  const bulbBanner = document.getElementById('victory-bulb-banner');
+
+  if (isZeroMistake) {
+    if (nowBulbs >= 7) {
+      bulbBanner.style.background = 'linear-gradient(135deg, #ffebee, #ffcdd2)';
+      bulbBanner.style.borderColor = '#d32f2f';
+      bulbBanner.style.color = '#b71c1c';
+      bulbBanner.innerHTML = `💮 <b>零失誤完美通關！已集齊 7/7 個小燈泡，成功蓋上「完美」紅色印章！</b>`;
+    } else {
+      bulbBanner.style.background = 'linear-gradient(135deg, #fff8e1, #ffecb3)';
+      bulbBanner.style.borderColor = '#ffa000';
+      bulbBanner.style.color = '#e65100';
+      bulbBanner.innerHTML = `💡 <b>全程 0 失誤！成功點亮第 ${nowBulbs} / 7 個小燈泡！</b>（再零失誤完成 ${7 - nowBulbs} 次即可獲「完美」印章）`;
+    }
+  } else {
+    bulbBanner.style.background = '#f5f5f5';
+    bulbBanner.style.borderColor = '#bdbdbd';
+    bulbBanner.style.color = '#616161';
+    bulbBanner.innerHTML = `💪 本局共有 <b>${currentRunMistakes} 次失誤</b>，未能點亮新燈泡（目前進度：${nowBulbs}/7 個 💡）。`;
+  }
+
+  const rec = {
+    stageId: currentStageObj.id,
+    section: currentStageObj.section,
+    title: currentStageObj.title,
+    score: score,
+    totalSeconds: totalSeconds,
+    stage1Seconds: stage1Seconds,
+    stage2Seconds: stage2Seconds,
+    mistakes: currentRunMistakes,
+    date: new Date().toLocaleString('zh-HK', { hour12: false })
+  };
+  gameRecords.unshift(rec);
+  localStorage.setItem('csd_v2_records', JSON.stringify(gameRecords));
+
+  document.getElementById('victory-subtitle').innerText =
+    `課目 ${currentStageObj.section}：${currentStageObj.title}`;
+  document.getElementById('vic-final-score').innerText = `${score} 分`;
+  document.getElementById('vic-total-time').innerText = formatTime(totalSeconds);
+  document.getElementById('vic-tree-stat').innerText = `${stage1Seconds} 秒`;
+  document.getElementById('vic-bubble-stat').innerText = `${stage2Seconds} 秒`;
+
+  document.getElementById('victory-modal').classList.add('active');
+}
+
+// ==================== 歷史成績記錄面板 ====================
+function openRecordsModal() {
+  const container = document.getElementById('records-table-container');
+  if (gameRecords.length === 0) {
+    container.innerHTML = `<p style="text-align:center; color:#777; font-size:17px; padding:20px;">暫無挑戰記錄，快去挑戰一關吧！</p>`;
+  } else {
+    let rowsHtml = gameRecords.map((r, i) => `
+      <tr>
+        <td>#${i + 1}</td>
+        <td><b>課目 ${r.section}</b><br><small>${r.title}</small></td>
+        <td style="font-weight:900; color:#e65100; font-size:17px;">${r.score} 分</td>
+        <td>${r.mistakes === 0 ? '💡 零失誤' : `${r.mistakes || 0} 次失誤`}</td>
+        <td><b>${formatTime(r.totalSeconds)}</b><br><small>(樹 ${r.stage1Seconds}s / 泡 ${r.stage2Seconds}s)</small></td>
+        <td><small>${r.date}</small></td>
+      </tr>
+    `).join('');
+    container.innerHTML = `
+      <table class="record-table">
+        <thead>
+          <tr>
+            <th>次序</th>
+            <th>課目與關卡</th>
+            <th>最終得分</th>
+            <th>失誤紀錄</th>
+            <th>所用時間</th>
+            <th>完成日期</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    `;
+  }
+  document.getElementById('records-modal').classList.add('active');
+}
+
+function clearHistoryRecords() {
+  if (confirm('確定要清空所有歷史分數與時間記錄嗎？（課目的燈泡進度會保留）')) {
+    gameRecords = [];
+    localStorage.removeItem('csd_v2_records');
+    openRecordsModal();
+    initMenu();
+  }
+}
+
+// ==================== 備份與還原中心 ====================
+function openBackupModal() {
+  document.getElementById('backup-code-box').value = '';
+  document.getElementById('backup-modal').classList.add('active');
+}
+
+function createBackupPayload() {
+  return {
+    version: "2.2",
+    exportDate: new Date().toISOString(),
+    records: gameRecords,
+    perfectCounts: perfectCounts,
+    trees: treesData,
+    questions: questionsData
+  };
+}
+
+function downloadBackupFile() {
+  const payload = createBackupPayload();
+  const jsonStr = JSON.stringify(payload, null, 2);
+  const blob = new Blob([jsonStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateTag = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `Carol_CSD_Backup_${dateTag}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function uploadRestoreFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      applyRestoredData(data);
+    } catch (err) {
+      alert('備份檔案格式不正確，無法還原！');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function generateAndCopyBackupText() {
+  const payload = createBackupPayload();
+  const str = JSON.stringify(payload);
+  const box = document.getElementById('backup-code-box');
+  box.value = str;
+  box.select();
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(str).then(() => {
+      alert('✅ 已產生並複製備份碼！');
+    }).catch(() => {
+      alert('✅ 已產生備份碼！請全選複製。');
+    });
+  } else {
+    document.execCommand('copy');
+    alert('✅ 已產生並複製備份碼！');
+  }
+}
+
+function restoreFromBackupText() {
+  const raw = document.getElementById('backup-code-box').value.trim();
+  if (!raw) return;
+  try {
+    const data = JSON.parse(raw);
+    applyRestoredData(data);
+  } catch (err) {
+    alert('貼上的備份文字碼格式有誤！');
+  }
+}
+
+function applyRestoredData(data) {
+  if (!data || typeof data !== 'object') return;
+  if (Array.isArray(data.records)) {
+    gameRecords = data.records;
+    localStorage.setItem('csd_v2_records', JSON.stringify(gameRecords));
+  }
+  if (data.perfectCounts && typeof data.perfectCounts === 'object') {
+    perfectCounts = data.perfectCounts;
+    localStorage.setItem('csd_v2_perfect_counts', JSON.stringify(perfectCounts));
+  }
+  if (Array.isArray(data.trees) && data.trees.length > 0) {
+    treesData = data.trees;
+    localStorage.setItem('csd_v2_trees', JSON.stringify(treesData));
+  }
+  if (Array.isArray(data.questions) && data.questions.length > 0) {
+    questionsData = data.questions;
+    localStorage.setItem('csd_v2_questions', JSON.stringify(questionsData));
+  }
+  closeModals();
+  initMenu();
+  alert('🎉 還原成功！');
+}
+
+// ==================== 新增 EXCEL 題庫管理面板 ====================
+function openExcelModal() {
+  document.getElementById('excel-modal').classList.add('active');
+}
+
+function closeModals() {
+  document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('active'));
+}
+
+function importExcelData() {
+  const rawTree = document.getElementById('excel-tree-input').value.trim();
+  const rawBubble = document.getElementById('excel-bubble-input').value.trim();
+  let addedTrees = 0;
+  let addedBubbles = 0;
+
+  if (rawTree) {
+    let currentTree = null;
+    rawTree.split('\n').forEach(line => {
+      const cols = line.split('\t').map(c => c.trim());
+      if (cols.length < 5 || cols[0] === '主題' || cols[2] === '課目編號') return;
+      const theme = cols[0] || (currentTree ? currentTree.theme : selectedThemeKey);
+      const chapter = cols[1] || (currentTree ? currentTree.chapter : '一');
+      const sec = cols[2];
+      const title = cols[3];
+      const branch = cols[4];
+      const wrongStr = cols[5] || '';
+
+      if (sec && title) {
+        currentTree = {
+          id: `${theme}_${sec}`,
+          theme,
+          chapter,
+          section: sec,
+          title,
+          correct: branch ? [branch] : [],
+          wrong: wrongStr ? wrongStr.split('、').map(s => s.trim()).filter(Boolean) : []
+        };
+        const builtInMatch = treesData.findIndex(t => t.section === sec && t.theme === theme);
+        if (builtInMatch >= 0) {
+          currentTree.id = treesData[builtInMatch].id;
+          treesData[builtInMatch] = currentTree;
+        } else {
+          treesData.push(currentTree);
+        }
+        addedTrees++;
+      } else if (currentTree && branch) {
+        currentTree.correct.push(branch);
+      }
+    });
+  }
+
+  if (rawBubble) {
+    rawBubble.split('\n').forEach(line => {
+      const cols = line.split('\t').map(c => c.trim());
+      if (cols.length < 7 || cols[0] === '主題' || cols[2] === '關卡主題(子分支)') return;
+
+      const theme = cols[0] || selectedThemeKey;
+      let secId, subtopic, q, a, d1, d2, d3;
+      if (cols.length >= 9 && cols[8] !== '') {
+        const rawSec = cols[2];
+        const matchedTree = treesData.find(t => t.theme === theme && t.section === rawSec);
+        secId = matchedTree ? matchedTree.id : `${theme}_${rawSec}`;
+        subtopic = cols[3];
+        q = cols[4];
+        a = cols[5];
+        d1 = cols[6]; d2 = cols[7]; d3 = cols[8];
+      } else {
+        subtopic = cols[2];
+        const prefix = subtopic.split(' ')[0];
+        const matchedTree = treesData.find(t => t.theme === theme && (t.section === prefix || t.id.includes(prefix)));
+        secId = matchedTree ? matchedTree.id : `${theme}_${prefix}`;
+        q = cols[3];
+        a = cols[4];
+        d1 = cols[5]; d2 = cols[6]; d3 = cols[7];
+      }
+
+      if (q && a) {
+        questionsData.push({
+          sectionId: secId,
+          subtopic,
+          q,
+          a,
+          d: [d1 || '干擾項A', d2 || '干擾項B', d3 || '干擾項C']
+        });
+        addedBubbles++;
+      }
+    });
+  }
+
+  if (addedTrees > 0 || addedBubbles > 0) {
+    localStorage.setItem('csd_v2_trees', JSON.stringify(treesData));
+    localStorage.setItem('csd_v2_questions', JSON.stringify(questionsData));
+    document.getElementById('excel-tree-input').value = '';
+    document.getElementById('excel-bubble-input').value = '';
+    closeModals();
+    initMenu();
+    alert(`🎉 匯入成功！共更新了 ${addedTrees} 個蘋果樹課目、新增了 ${addedBubbles} 題泡泡題目！`);
+  } else {
+    alert('請確認貼上的內容是從 Excel 直接複製的列！');
+  }
+}
+
+function resetAllDefaultData() {
+  if (confirm('確定要重新載入程式碼內建的 DEFAULT_TREES 與 DEFAULT_QUESTIONS 題庫嗎？（你的歷史分數與 7 個小燈泡進度將會完整保留）')) {
+    localStorage.removeItem('csd_v2_trees');
+    localStorage.removeItem('csd_v2_questions');
+    treesData = [...DEFAULT_TREES];
+    questionsData = [...DEFAULT_QUESTIONS];
+    closeModals();
+    initMenu();
+  }
+}
+
+// 啟動選單
+initMenu();
+</script>
+</body>
+</html>
